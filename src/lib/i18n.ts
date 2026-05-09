@@ -80,6 +80,11 @@ type Dictionary = {
     emptyTitle: string;
     emptyDescription: string;
     submittedSuccess: string;
+    setupRequired: string;
+    authRequired: string;
+    submissionsTitle: string;
+    claimsTitle: string;
+    notes: string;
   };
   admin: {
     title: string;
@@ -147,6 +152,15 @@ type Dictionary = {
     | "admin_contact"
     | "application_form"
     | "manual_notes",
+    string
+  >;
+  reportTypes: Record<
+    | "spam"
+    | "scam"
+    | "invalid_join_method"
+    | "outdated_info"
+    | "abuse"
+    | "other",
     string
   >;
 };
@@ -232,7 +246,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       needsUpdate: "需要更新",
       emptyTitle: "暂时没有可展示的群组记录",
       emptyDescription: "你提交或认领的群组会出现在这里。",
-      submittedSuccess: "群组已提交，当前状态为审核中。"
+      submittedSuccess: "群组已提交，当前状态为审核中。",
+      setupRequired: "本地预览未配置 Supabase，暂时显示为空状态。",
+      authRequired: "登录后可以查看你提交和认领的群组。",
+      submissionsTitle: "我的提交",
+      claimsTitle: "我的认领",
+      notes: "审核备注"
     },
     admin: {
       title: "审核队列",
@@ -310,6 +329,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       admin_contact: "管理员联系",
       application_form: "申请表",
       manual_notes: "文字说明"
+    },
+    reportTypes: {
+      invalid_join_method: "加入方式失效",
+      outdated_info: "信息过期",
+      spam: "垃圾内容",
+      scam: "诈骗风险",
+      abuse: "滥用或骚扰",
+      other: "其他问题"
     }
   },
   en: {
@@ -397,7 +424,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       needsUpdate: "Needs update",
       emptyTitle: "No group records yet",
       emptyDescription: "Groups you submit or claim will appear here.",
-      submittedSuccess: "Group submitted and pending review."
+      submittedSuccess: "Group submitted and pending review.",
+      setupRequired:
+        "Supabase is not configured for this local preview, so an empty state is shown.",
+      authRequired: "Sign in to view groups you submitted or claimed.",
+      submissionsTitle: "My submissions",
+      claimsTitle: "My claims",
+      notes: "Reviewer notes"
     },
     admin: {
       title: "Review queues",
@@ -477,12 +510,27 @@ const dictionaries: Record<Locale, Dictionary> = {
       admin_contact: "Admin contact",
       application_form: "Application form",
       manual_notes: "Manual notes"
+    },
+    reportTypes: {
+      invalid_join_method: "Invalid join method",
+      outdated_info: "Outdated information",
+      spam: "Spam",
+      scam: "Scam",
+      abuse: "Abuse",
+      other: "Other"
     }
   }
 };
 
 export function normalizeLocale(value: string | undefined | null): Locale {
   return value?.toLowerCase().startsWith("en") ? "en" : "zh";
+}
+
+export function localeFromSearchOrHeader(
+  searchLang: string | undefined | null,
+  headerLocale: string | undefined | null
+): Locale {
+  return normalizeLocale(searchLang ?? headerLocale);
 }
 
 export function getDictionary(locale: Locale = "zh"): Dictionary {

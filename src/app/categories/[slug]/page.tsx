@@ -5,7 +5,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { GroupCard } from "@/components/GroupCard";
 import { getApprovedGroups } from "@/lib/data/groups";
 import { categories, getCategoryLabel, type CategorySlug } from "@/lib/domain";
-import { getDictionary, normalizeLocale } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/request-locale";
 
 type Params = Promise<{ slug: string }>;
 type SearchParams = Promise<
@@ -31,7 +32,7 @@ export default async function CategoryPage({
     params,
     searchParams
   ]);
-  const locale = normalizeLocale(firstParam(resolvedSearchParams?.lang));
+  const locale = await getRequestLocale(firstParam(resolvedSearchParams?.lang));
   const copy = getDictionary(locale);
 
   if (!isCategorySlug(slug)) {

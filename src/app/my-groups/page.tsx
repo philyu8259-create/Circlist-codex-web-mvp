@@ -1,13 +1,103 @@
 import { AppHeader } from "@/components/AppHeader";
-import { requireUser } from "@/lib/auth";
-import { getDictionary, normalizeLocale } from "@/lib/i18n";
+import { getCurrentUser } from "@/lib/auth";
+import { getDictionary, type Locale } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/request-locale";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
 >;
 
+type UserSubmission = {
+  id: string;
+  proposed_name: string;
+  proposed_platform: string;
+  moderation_status: string;
+  moderator_notes: string | null;
+  created_at: string | null;
+};
+
+type UserClaim = {
+  id: string;
+  claim_status: string;
+  evidence: string;
+  moderator_notes: string | null;
+  created_at: string | null;
+  groups: { name: string | null; slug: string | null } | null;
+};
+
+type MyGroupData = {
+  submissions: UserSubmission[];
+  claims: UserClaim[];
+  setupMissing: boolean;
+  authMissing: boolean;
+};
+
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function formatDate(value: string | null | undefined, locale: Locale): string {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
+async function getMyGroupData(): Promise<MyGroupData> {
+  const emptyData = {
+    submissions: [],
+    claims: [],
+    setupMissing: false,
+    authMissing: false
+  };
+
+  if (!hasSupabaseEnv()) {
+    return { ...emptyData, setupMissing: true };
+  }
+
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { ...emptyData, authMissing: true };
+  }
+
+  try {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    const [submissionsResult, claimsResult] = await Promise.all([
+      supabase
+        .from("group_submissions")
+        .select(
+          "id, proposed_name, proposed_platform, moderation_status, moderator_notes, created_at"
+        )
+        .eq("submitter_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      supabase
+        .from("ownership_claims")
+        .select(
+          "id, claim_status, evidence, moderator_notes, created_at, groups(name, slug)"
+        )
+        .eq("claimant_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    ]);
+
+    if (submissionsResult.error || claimsResult.error) {
+      return emptyData;
+    }
+
+    return {
+      ...emptyData,
+      submissions: (submissionsResult.data as UserSubmission[] | null) ?? [],
+      claims: (claimsResult.data as UserClaim[] | null) ?? []
+    };
+  } catch {
+    return emptyData;
+  }
 }
 
 export default async function MyGroupsPage({
@@ -16,18 +106,31 @@ export default async function MyGroupsPage({
   searchParams?: SearchParams;
 }) {
   const params = await searchParams;
-  const locale = normalizeLocale(firstParam(params?.lang));
+  const locale = await getRequestLocale(firstParam(params?.lang));
   const submitted = firstParam(params?.submitted);
   const copy = getDictionary(locale);
+  const data = await getMyGroupData();
 
-  await requireUser({ lang: locale, next: "/my-groups" });
+  const pendingCount =
+    data.submissions.filter((item) => item.moderation_status === "pending")
+      .length +
+    data.claims.filter((item) => item.claim_status === "pending").length;
+  const needsUpdateCount = data.submissions.filter(
+    (item) => item.moderation_status === "changes_requested"
+  ).length;
 
   const stats = [
-    { label: copy.myGroups.submitted, value: "0" },
-    { label: copy.myGroups.owned, value: "0" },
-    { label: copy.myGroups.pending, value: "0" },
-    { label: copy.myGroups.needsUpdate, value: "0" }
+    { label: copy.myGroups.submitted, value: String(data.submissions.length) },
+    {
+      label: copy.myGroups.owned,
+      value: String(
+        data.claims.filter((item) => item.claim_status === "approved").length
+      )
+    },
+    { label: copy.myGroups.pending, value: String(pendingCount) },
+    { label: copy.myGroups.needsUpdate, value: String(needsUpdateCount) }
   ];
+  const hasRecords = data.submissions.length > 0 || data.claims.length > 0;
 
   return (
     <>
@@ -48,6 +151,14 @@ export default async function MyGroupsPage({
           </p>
         ) : null}
 
+        {data.setupMissing || data.authMissing ? (
+          <p className="rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-ink/65">
+            {data.setupMissing
+              ? copy.myGroups.setupRequired
+              : copy.myGroups.authRequired}
+          </p>
+        ) : null}
+
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((item) => (
             <div
@@ -64,15 +175,97 @@ export default async function MyGroupsPage({
           ))}
         </section>
 
-        <section className="rounded-lg border border-dashed border-ink/15 bg-white px-5 py-10 text-center">
-          <h2 className="text-lg font-semibold text-ink">
-            {copy.myGroups.emptyTitle}
-          </h2>
-          <p className="mt-2 text-sm text-ink/60">
-            {copy.myGroups.emptyDescription}
-          </p>
-        </section>
+        {hasRecords ? (
+          <div className="grid gap-5 lg:grid-cols-2">
+            <section className="grid content-start gap-3">
+              <h2 className="text-lg font-semibold text-ink">
+                {copy.myGroups.submissionsTitle}
+              </h2>
+              {data.submissions.map((item) => (
+                <RecordCard
+                  description={item.proposed_platform}
+                  key={item.id}
+                  locale={locale}
+                  notes={item.moderator_notes}
+                  notesLabel={copy.myGroups.notes}
+                  status={item.moderation_status}
+                  timestamp={item.created_at}
+                  title={item.proposed_name}
+                />
+              ))}
+            </section>
+
+            <section className="grid content-start gap-3">
+              <h2 className="text-lg font-semibold text-ink">
+                {copy.myGroups.claimsTitle}
+              </h2>
+              {data.claims.map((item) => (
+                <RecordCard
+                  description={item.evidence}
+                  key={item.id}
+                  locale={locale}
+                  notes={item.moderator_notes}
+                  notesLabel={copy.myGroups.notes}
+                  status={item.claim_status}
+                  timestamp={item.created_at}
+                  title={item.groups?.name ?? item.groups?.slug ?? item.id}
+                />
+              ))}
+            </section>
+          </div>
+        ) : (
+          <section className="rounded-lg border border-dashed border-ink/15 bg-white px-5 py-10 text-center">
+            <h2 className="text-lg font-semibold text-ink">
+              {copy.myGroups.emptyTitle}
+            </h2>
+            <p className="mt-2 text-sm text-ink/60">
+              {copy.myGroups.emptyDescription}
+            </p>
+          </section>
+        )}
       </main>
     </>
+  );
+}
+
+function RecordCard({
+  title,
+  description,
+  status,
+  timestamp,
+  notes,
+  notesLabel,
+  locale
+}: {
+  title: string;
+  description: string;
+  status: string;
+  timestamp: string | null;
+  notes: string | null;
+  notesLabel: string;
+  locale: Locale;
+}) {
+  return (
+    <article className="rounded-lg border border-ink/10 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-ink">{title}</h3>
+          <p className="mt-1 line-clamp-3 text-sm leading-6 text-ink/60">
+            {description}
+          </p>
+        </div>
+        <span className="rounded-full bg-leaf/10 px-2.5 py-1 text-xs font-semibold text-leaf">
+          {status}
+        </span>
+      </div>
+      {timestamp ? (
+        <p className="mt-3 text-xs text-ink/45">{formatDate(timestamp, locale)}</p>
+      ) : null}
+      {notes ? (
+        <p className="mt-3 rounded-md bg-sky px-3 py-2 text-xs leading-5 text-ink/70">
+          {notesLabel}: {notes}
+        </p>
+      ) : null}
+    </article>
   );
 }

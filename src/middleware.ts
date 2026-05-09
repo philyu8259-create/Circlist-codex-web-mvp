@@ -1,12 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { normalizeLocale } from "@/lib/i18n";
+import { localeFromSearchOrHeader } from "@/lib/i18n";
 
 export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(
     "x-circlist-locale",
-    normalizeLocale(request.nextUrl.searchParams.get("lang"))
+    localeFromSearchOrHeader(
+      request.nextUrl.searchParams.get("lang"),
+      request.headers.get("accept-language")
+    )
   );
 
   return NextResponse.next({

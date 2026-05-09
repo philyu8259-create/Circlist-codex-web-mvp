@@ -5,7 +5,8 @@ import { GroupCard } from "@/components/GroupCard";
 import { SearchPanel } from "@/components/SearchPanel";
 import { getApprovedGroups } from "@/lib/data/groups";
 import { categories, getCategoryLabel } from "@/lib/domain";
-import { getDictionary, normalizeLocale } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/request-locale";
 import { searchGroups } from "@/lib/search";
 
 type SearchParams = Promise<
@@ -22,7 +23,7 @@ export default async function HomePage({
   searchParams?: SearchParams;
 }) {
   const params = await searchParams;
-  const locale = normalizeLocale(firstParam(params?.lang));
+  const locale = await getRequestLocale(firstParam(params?.lang));
   const query = firstParam(params?.q) ?? "";
   const copy = getDictionary(locale);
   const approvedGroups = await getApprovedGroups();

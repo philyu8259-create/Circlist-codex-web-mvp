@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { validateReviewSubmissionInput } from "../src/lib/actions/admin";
+import {
+  validateReviewOwnershipClaimInput,
+  validateReviewReportInput,
+  validateReviewSubmissionInput
+} from "../src/lib/actions/admin";
 
 const submissionId = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -52,5 +56,35 @@ describe("validateReviewSubmissionInput", () => {
         "Reviewer notes must be 2000 characters or fewer."
       );
     }
+  });
+});
+
+describe("validateReviewOwnershipClaimInput", () => {
+  it("rejects changes_requested because claim_status does not support it", () => {
+    const result = validateReviewOwnershipClaimInput({
+      claimId: submissionId,
+      decision: "changes_requested"
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain("Ownership claim decision is invalid.");
+    }
+  });
+});
+
+describe("validateReviewReportInput", () => {
+  it("accepts report review decisions", () => {
+    expect(
+      validateReviewReportInput({
+        reportId: submissionId,
+        decision: "approved"
+      })
+    ).toEqual({
+      ok: true,
+      submissionId,
+      decision: "approved",
+      reviewerNotes: null
+    });
   });
 });

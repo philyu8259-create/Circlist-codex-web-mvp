@@ -9,6 +9,7 @@ import {
 } from "@/lib/domain";
 import { sampleGroups } from "@/lib/mock-data";
 import { searchGroups } from "@/lib/search";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 type ApprovedGroupFilters = {
   query?: string;
@@ -56,13 +57,6 @@ type GroupRow = {
 const approvedSampleGroups = sampleGroups.filter(
   (group) => group.moderationStatus === "approved"
 );
-
-function hasSupabaseEnv(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
-}
 
 function getFallbackApprovedGroups(filters: ApprovedGroupFilters = {}): Group[] {
   const category = toCategorySlug(filters.category);

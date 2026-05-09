@@ -200,6 +200,40 @@ create policy "Users can read own group submissions"
   to authenticated
   using ((select auth.uid()) = submitter_id);
 
+create policy "Admins can read group submissions"
+  on public.group_submissions
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  );
+
+create policy "Admins can update group submissions"
+  on public.group_submissions
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  );
+
 create policy "Users can insert own ownership claims"
   on public.ownership_claims
   for insert
@@ -215,6 +249,40 @@ create policy "Users can read own ownership claims"
   for select
   to authenticated
   using ((select auth.uid()) = claimant_id);
+
+create policy "Admins can read ownership claims"
+  on public.ownership_claims
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  );
+
+create policy "Admins can update ownership claims"
+  on public.ownership_claims
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  );
 
 create policy "Anyone can insert reports"
   on public.reports
@@ -241,5 +309,39 @@ create policy "Anyone can insert reports"
           and group_join_methods.visibility = 'public'
           and group_join_methods.review_status = 'approved'
       )
+    )
+  );
+
+create policy "Admins can read reports"
+  on public.reports
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  );
+
+create policy "Admins can update reports"
+  on public.reports
+  for update
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and profiles.role = 'admin'
     )
   );

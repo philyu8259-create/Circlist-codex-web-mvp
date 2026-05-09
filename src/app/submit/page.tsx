@@ -2,7 +2,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { submitGroup } from "@/lib/actions/groups";
 import { categories, platforms } from "@/lib/domain";
 import { getCategoryLabel, getPlatformLabel } from "@/lib/domain";
-import { getDictionary, normalizeLocale } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/request-locale";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -18,7 +19,7 @@ export default async function SubmitPage({
   searchParams?: SearchParams;
 }) {
   const params = await searchParams;
-  const locale = normalizeLocale(firstParam(params?.lang));
+  const locale = await getRequestLocale(firstParam(params?.lang));
   const error = firstParam(params?.error);
   const copy = getDictionary(locale);
 

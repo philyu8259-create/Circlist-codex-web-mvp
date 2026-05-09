@@ -1,8 +1,14 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AdminQueue } from "@/components/AdminQueue";
-import { reviewSubmission } from "@/lib/actions/admin";
+import {
+  reviewOwnershipClaim,
+  reviewReport,
+  reviewSubmission
+} from "@/lib/actions/admin";
 import { getCurrentUser } from "@/lib/auth";
-import { getDictionary, normalizeLocale, type Locale } from "@/lib/i18n";
+import { getDictionary, type Locale } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/request-locale";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -49,13 +55,6 @@ type AdminQueues = {
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function hasSupabaseEnv(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
 }
 
 function formatDate(value: string | null | undefined, locale: Locale): string {
@@ -152,7 +151,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
       })),
       reports: reportRows.map((item) => ({
         id: item.id,
-        title: item.report_type,
+        title: copyReportType(item.report_type, locale),
         description: item.details ?? item.report_type,
         status: item.status,
         meta: formatDate(item.created_at, locale)
@@ -161,6 +160,57 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
   } catch {
     return { ...emptyQueues, liveUnavailable: true };
   }
+}
+
+function copyReportType(value: string, locale: Locale): string {
+  const dictionary = getDictionary(locale);
+
+  return value in dictionary.reportTypes
+    ? dictionary.reportTypes[value as keyof typeof dictionary.reportTypes]
+    : value;
+}
+
+function ReviewButtons({
+  approveLabel,
+  rejectLabel,
+  requestChangesLabel,
+  showRequestChanges = true
+}: {
+  approveLabel: string;
+  rejectLabel: string;
+  requestChangesLabel: string;
+  showRequestChanges?: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        className="rounded-md bg-leaf px-3 py-2 text-xs font-semibold text-white transition hover:bg-leaf/85"
+        name="decision"
+        type="submit"
+        value="approved"
+      >
+        {approveLabel}
+      </button>
+      <button
+        className="rounded-md bg-coral px-3 py-2 text-xs font-semibold text-white transition hover:bg-coral/85"
+        name="decision"
+        type="submit"
+        value="rejected"
+      >
+        {rejectLabel}
+      </button>
+      {showRequestChanges ? (
+        <button
+          className="rounded-md border border-ink/15 px-3 py-2 text-xs font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
+          name="decision"
+          type="submit"
+          value="changes_requested"
+        >
+          {requestChangesLabel}
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 function QueueEmpty({ message }: { message: string }) {
@@ -177,7 +227,7 @@ export default async function AdminPage({
   searchParams?: SearchParams;
 }) {
   const params = await searchParams;
-  const locale = normalizeLocale(firstParam(params?.lang));
+  const locale = await getRequestLocale(firstParam(params?.lang));
   const review = firstParam(params?.review);
   const copy = getDictionary(locale);
   const queues = await getAdminQueues(locale);
@@ -241,32 +291,11 @@ export default async function AdminPage({
                       name="reviewerNotes"
                       placeholder={copy.admin.reviewerNotes}
                     />
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        className="rounded-md bg-leaf px-3 py-2 text-xs font-semibold text-white transition hover:bg-leaf/85"
-                        name="decision"
-                        type="submit"
-                        value="approved"
-                      >
-                        {copy.admin.approve}
-                      </button>
-                      <button
-                        className="rounded-md bg-coral px-3 py-2 text-xs font-semibold text-white transition hover:bg-coral/85"
-                        name="decision"
-                        type="submit"
-                        value="rejected"
-                      >
-                        {copy.admin.reject}
-                      </button>
-                      <button
-                        className="rounded-md border border-ink/15 px-3 py-2 text-xs font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
-                        name="decision"
-                        type="submit"
-                        value="changes_requested"
-                      >
-                        {copy.admin.requestChanges}
-                      </button>
-                    </div>
+                    <ReviewButtons
+                      approveLabel={copy.admin.approve}
+                      rejectLabel={copy.admin.reject}
+                      requestChangesLabel={copy.admin.requestChanges}
+                    />
                   </form>
                 </AdminQueue>
               ))
@@ -293,7 +322,23 @@ export default async function AdminPage({
                   meta={item.meta}
                   status={`${copy.admin.statusLabel}: ${item.status}`}
                   title={item.title}
-                />
+                >
+                  <form action={reviewOwnershipClaim} className="grid gap-3">
+                    <input name="lang" type="hidden" value={locale} />
+                    <input name="claimId" type="hidden" value={item.id} />
+                    <textarea
+                      className="min-h-20 rounded-md border border-ink/15 px-3 py-2 text-sm outline-none transition focus:border-leaf"
+                      name="reviewerNotes"
+                      placeholder={copy.admin.reviewerNotes}
+                    />
+                    <ReviewButtons
+                      approveLabel={copy.admin.approve}
+                      rejectLabel={copy.admin.reject}
+                      requestChangesLabel={copy.admin.requestChanges}
+                      showRequestChanges={false}
+                    />
+                  </form>
+                </AdminQueue>
               ))
             ) : (
               <QueueEmpty message={copy.admin.emptyQueue} />
@@ -318,7 +363,17 @@ export default async function AdminPage({
                   meta={item.meta}
                   status={`${copy.admin.statusLabel}: ${item.status}`}
                   title={item.title}
-                />
+                >
+                  <form action={reviewReport} className="grid gap-3">
+                    <input name="lang" type="hidden" value={locale} />
+                    <input name="reportId" type="hidden" value={item.id} />
+                    <ReviewButtons
+                      approveLabel={copy.admin.approve}
+                      rejectLabel={copy.admin.reject}
+                      requestChangesLabel={copy.admin.requestChanges}
+                    />
+                  </form>
+                </AdminQueue>
               ))
             ) : (
               <QueueEmpty message={copy.admin.emptyQueue} />

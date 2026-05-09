@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { hasSupabaseEnv } from "../supabase/env";
 import type { Database } from "../supabase/types";
 
 const reviewDecisions = [
@@ -9,13 +10,26 @@ const reviewDecisions = [
 ] as const;
 
 type ReviewDecision = (typeof reviewDecisions)[number];
+type OwnershipClaimDecision = Exclude<ReviewDecision, "changes_requested">;
 type GroupSubmissionUpdate =
   Database["public"]["Tables"]["group_submissions"]["Update"];
+type OwnershipClaimUpdate =
+  Database["public"]["Tables"]["ownership_claims"]["Update"];
+type ReportUpdate = Database["public"]["Tables"]["reports"]["Update"];
 
 type ReviewSubmissionInput = {
   submissionId?: FormDataEntryValue | null;
   decision?: FormDataEntryValue | null;
   reviewerNotes?: FormDataEntryValue | null;
+};
+type ReviewOwnershipClaimInput = {
+  claimId?: FormDataEntryValue | null;
+  decision?: FormDataEntryValue | null;
+  reviewerNotes?: FormDataEntryValue | null;
+};
+type ReviewReportInput = {
+  reportId?: FormDataEntryValue | null;
+  decision?: FormDataEntryValue | null;
 };
 
 type ReviewSubmissionValidation =
@@ -26,6 +40,14 @@ type ReviewSubmissionValidation =
       reviewerNotes: string | null;
     }
   | { ok: false; errors: string[] };
+type ReviewOwnershipClaimValidation =
+  | {
+      ok: true;
+      claimId: string;
+      decision: OwnershipClaimDecision;
+      reviewerNotes: string | null;
+    }
+  | { ok: false; errors: string[] };
 
 const REVIEWER_NOTES_MAX_LENGTH = 2000;
 const UUID_PATTERN =
@@ -33,13 +55,6 @@ const UUID_PATTERN =
 
 function text(value: FormDataEntryValue | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function hasSupabaseEnv(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
 }
 
 function isUuid(value: string): boolean {
@@ -80,6 +95,39 @@ export function validateReviewSubmissionInput(
     decision: decision as ReviewDecision,
     reviewerNotes: reviewerNotes || null
   };
+}
+
+export function validateReviewOwnershipClaimInput(
+  input: ReviewOwnershipClaimInput
+): ReviewOwnershipClaimValidation {
+  const result = validateReviewSubmissionInput({
+    submissionId: input.claimId,
+    decision: input.decision,
+    reviewerNotes: input.reviewerNotes
+  });
+
+  if (!result.ok) return result;
+
+  if (result.decision === "changes_requested") {
+    return { ok: false, errors: ["Ownership claim decision is invalid."] };
+  }
+
+  return {
+    ok: true,
+    claimId: result.submissionId,
+    decision: result.decision,
+    reviewerNotes: result.reviewerNotes
+  };
+}
+
+export function validateReviewReportInput(
+  input: ReviewReportInput
+): ReviewSubmissionValidation {
+  return validateReviewSubmissionInput({
+    submissionId: input.reportId,
+    decision: input.decision,
+    reviewerNotes: null
+  });
 }
 
 export async function requireAdmin() {
@@ -129,6 +177,69 @@ export async function reviewSubmission(formData: FormData) {
 
   const { error } = await supabase
     .from("group_submissions")
+    .update(update as never)
+    .eq("id", validation.submissionId);
+
+  if (error) {
+    redirect(`/admin?lang=${locale}&review=error`);
+  }
+
+  redirect(`/admin?lang=${locale}&review=updated`);
+}
+
+export async function reviewOwnershipClaim(formData: FormData) {
+  "use server";
+
+  const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
+  const validation = validateReviewOwnershipClaimInput({
+    claimId: formData.get("claimId"),
+    decision: formData.get("decision"),
+    reviewerNotes: formData.get("reviewerNotes")
+  });
+
+  if (!validation.ok) {
+    redirect(`/admin?lang=${locale}&review=validation`);
+  }
+
+  const { supabase } = await requireAdmin();
+  const update: OwnershipClaimUpdate = {
+    claim_status: validation.decision,
+    moderator_notes: validation.reviewerNotes,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await supabase
+    .from("ownership_claims")
+    .update(update as never)
+    .eq("id", validation.claimId);
+
+  if (error) {
+    redirect(`/admin?lang=${locale}&review=error`);
+  }
+
+  redirect(`/admin?lang=${locale}&review=updated`);
+}
+
+export async function reviewReport(formData: FormData) {
+  "use server";
+
+  const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
+  const validation = validateReviewReportInput({
+    reportId: formData.get("reportId"),
+    decision: formData.get("decision")
+  });
+
+  if (!validation.ok) {
+    redirect(`/admin?lang=${locale}&review=validation`);
+  }
+
+  const { supabase } = await requireAdmin();
+  const update: ReportUpdate = {
+    status: validation.decision
+  };
+
+  const { error } = await supabase
+    .from("reports")
     .update(update as never)
     .eq("id", validation.submissionId);
 

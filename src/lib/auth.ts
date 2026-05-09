@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
+import { hasSupabaseEnv } from "@/lib/supabase/env";
 
 type RequireUserOptions = {
   lang?: string;
@@ -8,6 +9,10 @@ type RequireUserOptions = {
 };
 
 export async function getCurrentUser() {
+  if (!hasSupabaseEnv()) {
+    return null;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

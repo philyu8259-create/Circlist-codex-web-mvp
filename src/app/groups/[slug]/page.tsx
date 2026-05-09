@@ -6,7 +6,8 @@ import { claimGroup } from "@/lib/actions/groups";
 import { reportGroup } from "@/lib/actions/reports";
 import { getApprovedGroupBySlug } from "@/lib/data/groups";
 import { getCategoryLabel, getPlatformLabel } from "@/lib/domain";
-import { getDictionary, normalizeLocale } from "@/lib/i18n";
+import { getDictionary } from "@/lib/i18n";
+import { getRequestLocale } from "@/lib/request-locale";
 
 type Params = Promise<{ slug: string }>;
 type SearchParams = Promise<
@@ -28,7 +29,7 @@ export default async function GroupDetailPage({
     params,
     searchParams
   ]);
-  const locale = normalizeLocale(firstParam(resolvedSearchParams?.lang));
+  const locale = await getRequestLocale(firstParam(resolvedSearchParams?.lang));
   const reportState = firstParam(resolvedSearchParams?.report);
   const claimState = firstParam(resolvedSearchParams?.claim);
   const copy = getDictionary(locale);
@@ -254,12 +255,11 @@ export default async function GroupDetailPage({
                 className="rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf"
                 name="reportType"
               >
-                <option value="invalid_join_method">Invalid join method</option>
-                <option value="outdated_info">Outdated information</option>
-                <option value="spam">Spam</option>
-                <option value="scam">Scam</option>
-                <option value="abuse">Abuse</option>
-                <option value="other">Other</option>
+                {Object.entries(copy.reportTypes).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="mt-4 grid gap-2 text-sm font-medium text-ink">
