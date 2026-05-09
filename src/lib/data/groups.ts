@@ -5,11 +5,14 @@ import {
   type Group,
   type JoinMethod,
   type JoinMethodReviewStatus,
+  type LocalizedGroupContent,
+  type LocalizedGroupField,
   type TrustSignal
 } from "@/lib/domain";
 import { sampleGroups } from "@/lib/mock-data";
 import { searchGroups } from "@/lib/search";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import type { Json } from "@/lib/supabase/types";
 
 type ApprovedGroupFilters = {
   query?: string;
@@ -49,10 +52,21 @@ type GroupRow = {
   owner_verified: boolean;
   moderation_status: Group["moderationStatus"];
   trust_signals: string[] | null;
+  localized_content: Json | null;
   last_verified_at: string | null;
   categories: CategoryRelation | CategoryRelation[] | null;
   group_join_methods: JoinMethodRow[] | null;
 };
+
+const localizedFields = [
+  "shortDescription",
+  "description",
+  "suitableAudience",
+  "suitableFor",
+  "language",
+  "region",
+  "rulesSummary"
+] as const satisfies readonly LocalizedGroupField[];
 
 const approvedSampleGroups = sampleGroups.filter(
   (group) => group.moderationStatus === "approved"
@@ -101,6 +115,35 @@ function toJoinMethodReviewStatus(
 
 function toDateOnly(value: string | null): string | undefined {
   return value?.slice(0, 10) || undefined;
+}
+
+function toLocalizedContent(value: Json | null): LocalizedGroupContent | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const content: LocalizedGroupContent = {};
+
+  for (const locale of ["zh", "en"] as const) {
+    const source = value[locale];
+
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+      continue;
+    }
+
+    for (const field of localizedFields) {
+      const fieldValue = source[field];
+
+      if (typeof fieldValue === "string") {
+        content[locale] = {
+          ...content[locale],
+          [field]: fieldValue
+        };
+      }
+    }
+  }
+
+  return Object.keys(content).length > 0 ? content : undefined;
 }
 
 function mapGroupRow(row: GroupRow): Group | null {
@@ -156,7 +199,8 @@ function mapGroupRow(row: GroupRow): Group | null {
     lastVerifiedAt: toDateOnly(row.last_verified_at),
     trustSignals: (row.trust_signals ?? []).filter(isTrustSignal),
     joinMethods,
-    moderationStatus: row.moderation_status
+    moderationStatus: row.moderation_status,
+    localizedContent: toLocalizedContent(row.localized_content)
   };
 }
 
@@ -198,6 +242,7 @@ export async function getApprovedGroups(
         owner_verified,
         moderation_status,
         trust_signals,
+        localized_content,
         last_verified_at,
         categories!inner(slug),
         group_join_methods(
@@ -267,6 +312,7 @@ export async function getApprovedGroupBySlug(
         owner_verified,
         moderation_status,
         trust_signals,
+        localized_content,
         last_verified_at,
         categories!inner(slug),
         group_join_methods(

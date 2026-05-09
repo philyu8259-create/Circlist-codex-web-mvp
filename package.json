@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
+    "seed:samples": "tsx scripts/seed-sample-groups.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -30,10 +31,13 @@
     "jsdom": "^25.0.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
   "eslintConfig": {
-    "extends": ["next/core-web-vitals"]
+    "extends": [
+      "next/core-web-vitals"
+    ]
   }
 }

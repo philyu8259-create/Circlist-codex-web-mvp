@@ -91,6 +91,7 @@ export type Database = {
         owner_verified: boolean;
         moderation_status: ModerationStatus;
         trust_signals: string[];
+        localized_content: Json;
         last_verified_at: string | null;
         created_at: string;
         updated_at: string;
