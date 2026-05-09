@@ -1,6 +1,6 @@
-import type { Group } from "@/lib/domain";
+import type { Group, LocalizedGroupContent } from "@/lib/domain";
 
-export const sampleGroups: Group[] = [
+const rawSampleGroups: Group[] = [
   {
     id: "grp_openai_developer_community",
     slug: "openai-developer-community",
@@ -792,3 +792,229 @@ export const sampleGroups: Group[] = [
     moderationStatus: "approved"
   }
 ];
+
+type EnglishGroupContent = NonNullable<LocalizedGroupContent["en"]>;
+
+const englishContentBySlug: Record<string, EnglishGroupContent> = {
+  "openai-developer-community": {
+    shortDescription:
+      "OpenAI's official developer forum for API, model, agent, and product integration questions.",
+    suitableAudience: "AI app developers, product engineers, and API teams",
+    suitableFor: "AI app developers, product engineers, and API teams",
+    rulesSummary:
+      "Use it for developer questions and avoid sharing secrets, account issues, or unrelated promotion."
+  },
+  "langchain-community-slack": {
+    shortDescription:
+      "LangChain's official community Slack for developers building AI agents and LLM applications.",
+    suitableAudience: "AI engineers, agent developers, and LLM app builders",
+    suitableFor: "AI engineers, agent developers, and LLM app builders",
+    rulesSummary:
+      "Follow the community code of conduct and avoid unrelated recruiting or spam."
+  },
+  "hugging-face-discord": {
+    shortDescription:
+      "Hugging Face's official Discord for machine learning, open models, and practical AI work.",
+    suitableAudience:
+      "ML engineers, AI researchers, application developers, and open model users",
+    suitableFor:
+      "ML engineers, AI researchers, application developers, and open model users",
+    rulesSummary:
+      "Join through the Hugging Face verification flow and follow the community rules."
+  },
+  "n8n-community-forum": {
+    shortDescription:
+      "n8n's official community forum for automation workflows, AI agents, and integrations.",
+    suitableAudience:
+      "Automation developers, AI workflow builders, and operations engineers",
+    suitableFor:
+      "Automation developers, AI workflow builders, and operations engineers",
+    rulesSummary:
+      "Provide workflow context when asking questions and do not expose credentials or sensitive business data."
+  },
+  "supabase-discord": {
+    shortDescription:
+      "Supabase's official Discord for Postgres, auth, storage, edge functions, and app development.",
+    suitableAudience:
+      "Web developers, backend engineers, and Postgres/Supabase users",
+    suitableFor:
+      "Web developers, backend engineers, and Postgres/Supabase users",
+    rulesSummary:
+      "Use it for public technical discussion and community support; never post project secrets."
+  },
+  "cloudflare-developers-discord": {
+    shortDescription:
+      "Cloudflare Developers' official Discord for Workers, Pages, AI, and edge development.",
+    suitableAudience:
+      "Frontend and backend developers, edge developers, and Cloudflare Workers users",
+    suitableFor:
+      "Frontend and backend developers, edge developers, and Cloudflare Workers users",
+    rulesSummary:
+      "Follow the official community rules and include context when asking technical questions."
+  },
+  "nextjs-discord": {
+    shortDescription:
+      "A Next.js community entry point for React, App Router, and full-stack web development discussions.",
+    suitableAudience:
+      "React and Next.js developers, full-stack web engineers, and frontend teams",
+    suitableFor:
+      "React and Next.js developers, full-stack web engineers, and frontend teams",
+    rulesSummary:
+      "Technical support questions should include reproducible context and follow Next.js community norms."
+  },
+  "reactiflux-discord": {
+    shortDescription:
+      "A large React and JavaScript Discord for React, React Native, Redux, GraphQL, and related topics.",
+    suitableAudience:
+      "React developers, frontend engineers, and React Native or GraphQL users",
+    suitableFor:
+      "React developers, frontend engineers, and React Native or GraphQL users",
+    rulesSummary:
+      "Keep discussions technical and follow the community's Discord rules."
+  },
+  "github-community": {
+    shortDescription:
+      "GitHub's official community hub for open source collaboration, product feedback, and developer questions.",
+    suitableAudience:
+      "Open source maintainers, GitHub users, and developer tool teams",
+    suitableFor:
+      "Open source maintainers, GitHub users, and developer tool teams",
+    rulesSummary:
+      "Use it for public GitHub and open source discussion; do not post sensitive repository information."
+  },
+  "kubernetes-slack": {
+    shortDescription:
+      "Kubernetes' official Slack for cloud native users, SIGs, working groups, and contributors.",
+    suitableAudience:
+      "Cloud native engineers, Kubernetes users, and CNCF contributors",
+    suitableFor:
+      "Cloud native engineers, Kubernetes users, and CNCF contributors",
+    rulesSummary:
+      "Use the right channel for each topic and follow the Kubernetes Code of Conduct."
+  },
+  "shopify-community": {
+    shortDescription:
+      "Shopify's official community forum for cross-border ecommerce, online stores, merchants, and partners.",
+    suitableAudience:
+      "Cross-border ecommerce sellers, Shopify merchants, store developers, and DTC teams",
+    suitableFor:
+      "Cross-border ecommerce sellers, Shopify merchants, store developers, and DTC teams",
+    rulesSummary:
+      "Use it for public business and technical discussion; avoid sharing sensitive store admin information."
+  },
+  "mds-ecommerce-community": {
+    shortDescription:
+      "A vetted ecommerce founder community for seven- to nine-figure brands across Amazon, DTC, and TikTok Shop.",
+    suitableAudience:
+      "Established ecommerce founders and DTC, Amazon, or TikTok Shop operators",
+    suitableFor:
+      "Established ecommerce founders and DTC, Amazon, or TikTok Shop operators",
+    rulesSummary:
+      "Applicants should meet the community threshold and go through review before joining."
+  },
+  "underdog-ecom-slack": {
+    shortDescription:
+      "A Slack community for scrappy ecommerce founders and operators building lean brands.",
+    suitableAudience:
+      "Cross-border ecommerce founders, DTC operators, and lean brand teams",
+    suitableFor:
+      "Cross-border ecommerce founders, DTC operators, and lean brand teams",
+    rulesSummary:
+      "The community focuses on real ecommerce operations and requires an application before Slack access."
+  },
+  "everything-marketplaces": {
+    shortDescription:
+      "A community for marketplace founders and operators building platform businesses for global markets.",
+    suitableAudience:
+      "Marketplace founders, platform business leads, and overseas operations teams",
+    suitableFor:
+      "Marketplace founders, platform business leads, and overseas operations teams",
+    rulesSummary:
+      "Best suited to marketplace founders and operators looking for high-signal peer exchange."
+  },
+  "opc-community": {
+    shortDescription:
+      "A public community and member network for AI-era one-person companies and solo founders.",
+    suitableAudience:
+      "One-person company founders, solo founders, AI builders, and indie hackers",
+    suitableFor:
+      "One-person company founders, solo founders, AI builders, and indie hackers",
+    rulesSummary:
+      "The community emphasizes high-trust, high-signal connections for serious one-person company builders."
+  },
+  "small-bets": {
+    shortDescription:
+      "A paid community for solopreneurs and small internet business builders.",
+    suitableAudience:
+      "One-person company founders, solopreneurs, and independent internet entrepreneurs",
+    suitableFor:
+      "One-person company founders, solopreneurs, and independent internet entrepreneurs",
+    rulesSummary:
+      "This is a paid community for people seriously running small business experiments."
+  },
+  "productize-yourself": {
+    shortDescription:
+      "A course and community around productized services and one-person businesses.",
+    suitableAudience:
+      "Consultants, B2B service providers, and solo founders productizing their expertise",
+    suitableFor:
+      "Consultants, B2B service providers, and solo founders productizing their expertise",
+    rulesSummary:
+      "Best for discussion around productized services, B2B offers, and one-person business systems."
+  },
+  "microconf-connect": {
+    shortDescription:
+      "A vetted private community for bootstrapped SaaS founders.",
+    suitableAudience:
+      "Bootstrapped SaaS founders, indie developers, and small software teams",
+    suitableFor:
+      "Bootstrapped SaaS founders, indie developers, and small software teams",
+    rulesSummary:
+      "Requires an application and emphasizes no-pitch, high-quality founder support."
+  },
+  "micro-saas-hq-community": {
+    shortDescription:
+      "A Micro SaaS community for SaaS founders, builders, and solopreneurs.",
+    suitableAudience: "Micro SaaS founders, indie developers, and solopreneurs",
+    suitableFor: "Micro SaaS founders, indie developers, and solopreneurs",
+    rulesSummary:
+      "Focused on product feedback, launch support, and SaaS growth discussions."
+  },
+  "bogleheads-forum": {
+    shortDescription:
+      "A long-running forum for low-cost index investing, asset allocation, and personal finance.",
+    suitableAudience:
+      "Long-term investors, index fund investors, and personal finance learners",
+    suitableFor:
+      "Long-term investors, index fund investors, and personal finance learners",
+    rulesSummary:
+      "Discussion centers on long-term, low-cost, diversified investing rather than short-term stock promotion."
+  },
+  "value-investors-club": {
+    shortDescription:
+      "A selective community where value investors exchange well-researched investment ideas.",
+    suitableAudience:
+      "Value investors, equity researchers, and professional investors",
+    suitableFor:
+      "Value investors, equity researchers, and professional investors",
+    rulesSummary:
+      "Membership and discussion require high-quality investment research, not generic stock promotion."
+  },
+  "tradingview-community": {
+    shortDescription:
+      "TradingView's social network for market analysis, scripts, trading ideas, and peer discussion.",
+    suitableAudience:
+      "Traders, investors, Pine Script users, and market analysis enthusiasts",
+    suitableFor:
+      "Traders, investors, Pine Script users, and market analysis enthusiasts",
+    rulesSummary:
+      "Investing involves risk; community posts are not investment advice and must follow the platform rules."
+  }
+};
+
+export const sampleGroups: Group[] = rawSampleGroups.map((group) => ({
+  ...group,
+  localizedContent: {
+    en: englishContentBySlug[group.slug]
+  }
+}));

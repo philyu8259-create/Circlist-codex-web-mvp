@@ -80,6 +80,19 @@ export type JoinMethod = {
   reviewStatus: JoinMethodReviewStatus;
 };
 
+export type LocalizedGroupField =
+  | "shortDescription"
+  | "description"
+  | "suitableAudience"
+  | "suitableFor"
+  | "language"
+  | "region"
+  | "rulesSummary";
+
+export type LocalizedGroupContent = Partial<
+  Record<Locale, Partial<Record<LocalizedGroupField, string>>>
+>;
+
 export type Group = {
   id: string;
   slug: string;
@@ -102,6 +115,7 @@ export type Group = {
   trustSignals: TrustSignal[];
   joinMethods: JoinMethod[];
   moderationStatus: ModerationStatus;
+  localizedContent?: LocalizedGroupContent;
 };
 
 export function getCategoryLabel(
@@ -116,4 +130,12 @@ export function getPlatformLabel(
   locale: Locale = "zh"
 ): string {
   return platformLabels[platform][locale];
+}
+
+export function getGroupText(
+  group: Group,
+  field: LocalizedGroupField,
+  locale: Locale = "zh"
+): string {
+  return group.localizedContent?.[locale]?.[field] ?? group[field];
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import {
   getCategoryLabel,
+  getGroupText,
   getPlatformLabel,
   type Group
 } from "@/lib/domain";
@@ -46,7 +47,7 @@ export function GroupCard({ group, locale }: GroupCardProps) {
           </Link>
         </h2>
         <p className="mt-2 line-clamp-2 text-sm leading-6 text-ink/68">
-          {group.shortDescription}
+          {getGroupText(group, "shortDescription", locale)}
         </p>
       </div>
 
@@ -66,7 +67,8 @@ export function GroupCard({ group, locale }: GroupCardProps) {
             {copy.card.regionLanguage}
           </dt>
           <dd className="mt-1 font-semibold text-ink">
-            {group.region} · {group.language}
+            {getGroupText(group, "region", locale)} ·{" "}
+            {getGroupText(group, "language", locale)}
           </dd>
         </div>
       </dl>

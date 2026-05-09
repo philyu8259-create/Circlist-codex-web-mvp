@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getCategoryLabel } from "../src/lib/domain";
+import { getCategoryLabel, getGroupText } from "../src/lib/domain";
 import { sampleGroups } from "../src/lib/mock-data";
 import { searchGroups } from "../src/lib/search";
 
@@ -132,6 +132,22 @@ describe("group search", () => {
     expect(sampleGroups.some((group) => group.slug.includes("pending"))).toBe(
       false
     );
+  });
+
+  it("provides English localized sample content for rendered group copy", () => {
+    const cjkPattern = /[\u3400-\u9FFF]/;
+
+    expect(
+      sampleGroups.every((group) => group.localizedContent?.en?.shortDescription)
+    ).toBe(true);
+    expect(
+      sampleGroups.every(
+        (group) =>
+          !cjkPattern.test(getGroupText(group, "shortDescription", "en")) &&
+          !cjkPattern.test(getGroupText(group, "suitableFor", "en")) &&
+          !cjkPattern.test(getGroupText(group, "rulesSummary", "en"))
+      )
+    ).toBe(true);
   });
 
   it("standardizes group category data on categorySlug", () => {

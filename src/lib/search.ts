@@ -1,5 +1,6 @@
 import {
   getCategoryLabel,
+  getGroupText,
   getPlatformLabel,
   type CategorySlug,
   type Group,
@@ -50,12 +51,18 @@ export function searchGroups(
       getCategoryLabel(group.categorySlug, "en"),
       getPlatformLabel(group.platform, "zh"),
       getPlatformLabel(group.platform, "en"),
-      group.shortDescription,
-      group.description,
-      group.suitableAudience,
-      group.suitableFor,
-      group.language,
-      group.region,
+      getGroupText(group, "shortDescription", "zh"),
+      getGroupText(group, "shortDescription", "en"),
+      getGroupText(group, "description", "zh"),
+      getGroupText(group, "description", "en"),
+      getGroupText(group, "suitableAudience", "zh"),
+      getGroupText(group, "suitableAudience", "en"),
+      getGroupText(group, "suitableFor", "zh"),
+      getGroupText(group, "suitableFor", "en"),
+      getGroupText(group, "language", "zh"),
+      getGroupText(group, "language", "en"),
+      getGroupText(group, "region", "zh"),
+      getGroupText(group, "region", "en"),
       ...group.tags
     ]
       .join(" ")

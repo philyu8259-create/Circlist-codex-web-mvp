@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { claimGroup } from "@/lib/actions/groups";
 import { reportGroup } from "@/lib/actions/reports";
 import { getApprovedGroupBySlug } from "@/lib/data/groups";
-import { getCategoryLabel, getPlatformLabel } from "@/lib/domain";
+import { getCategoryLabel, getGroupText, getPlatformLabel } from "@/lib/domain";
 import { getDictionary } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/request-locale";
 
@@ -67,7 +67,7 @@ export default async function GroupDetailPage({
             {group.name}
           </h1>
           <p className="mt-3 max-w-3xl text-base leading-7 text-ink/68">
-            {group.shortDescription}
+            {getGroupText(group, "shortDescription", locale)}
           </p>
         </section>
 
@@ -77,13 +77,13 @@ export default async function GroupDetailPage({
               {copy.detail.about}
             </h2>
             <p className="mt-3 text-sm leading-7 text-ink/70">
-              {group.description}
+              {getGroupText(group, "description", locale)}
             </p>
             <h3 className="mt-6 text-sm font-semibold text-ink">
               {copy.detail.suitableFor}
             </h3>
             <p className="mt-2 text-sm leading-6 text-ink/70">
-              {group.suitableFor}
+              {getGroupText(group, "suitableFor", locale)}
             </p>
           </div>
 
@@ -99,9 +99,11 @@ export default async function GroupDetailPage({
                 {getCategoryLabel(group.categorySlug, locale)}
               </DetailRow>
               <DetailRow label={copy.fields.language}>
-                {group.language}
+                {getGroupText(group, "language", locale)}
               </DetailRow>
-              <DetailRow label={copy.fields.region}>{group.region}</DetailRow>
+              <DetailRow label={copy.fields.region}>
+                {getGroupText(group, "region", locale)}
+              </DetailRow>
               <DetailRow label={copy.fields.joinPolicy}>
                 {copy.joinPolicies[group.joinPolicy]}
               </DetailRow>
@@ -187,7 +189,7 @@ export default async function GroupDetailPage({
             {copy.detail.rules}
           </h2>
           <p className="mt-3 text-sm leading-7 text-ink/70">
-            {group.rulesSummary}
+            {getGroupText(group, "rulesSummary", locale)}
           </p>
         </section>
 
