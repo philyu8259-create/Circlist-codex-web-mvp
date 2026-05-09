@@ -219,7 +219,27 @@ create policy "Users can read own ownership claims"
 create policy "Anyone can insert reports"
   on public.reports
   for insert
+  -- Clients hold the anon key, so report targets must be validated in RLS
+  -- instead of relying only on the server action.
   with check (
     (reporter_id is null or (select auth.uid()) = reporter_id)
     and status = 'pending'
+    and group_id is not null
+    and exists (
+      select 1
+      from public.groups
+      where groups.id = reports.group_id
+        and groups.moderation_status = 'approved'
+    )
+    and (
+      join_method_id is null
+      or exists (
+        select 1
+        from public.group_join_methods
+        where group_join_methods.id = reports.join_method_id
+          and group_join_methods.group_id = reports.group_id
+          and group_join_methods.visibility = 'public'
+          and group_join_methods.review_status = 'approved'
+      )
+    )
   );
