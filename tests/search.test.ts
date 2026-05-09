@@ -91,7 +91,7 @@ describe("group search", () => {
   it("includes verified real-world public communities as samples", () => {
     const slugs = sampleGroups.map((group) => group.slug);
 
-    expect(sampleGroups).toHaveLength(100);
+    expect(sampleGroups).toHaveLength(126);
     expect(new Set(slugs)).toHaveLength(sampleGroups.length);
     expect(slugs).toContain("langchain-community-slack");
     expect(slugs).toContain("hugging-face-discord");

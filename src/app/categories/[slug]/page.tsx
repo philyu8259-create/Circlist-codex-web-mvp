@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { GroupCard } from "@/components/GroupCard";
+import { Pagination } from "@/components/Pagination";
 import { getApprovedGroups } from "@/lib/data/groups";
 import { categories, getCategoryLabel, type CategorySlug } from "@/lib/domain";
 import { getDictionary } from "@/lib/i18n";
+import { paginate, parsePageParam } from "@/lib/pagination";
 import { getRequestLocale } from "@/lib/request-locale";
 
 type Params = Promise<{ slug: string }>;
@@ -33,6 +35,7 @@ export default async function CategoryPage({
     searchParams
   ]);
   const locale = await getRequestLocale(firstParam(resolvedSearchParams?.lang));
+  const requestedPage = parsePageParam(firstParam(resolvedSearchParams?.page));
   const copy = getDictionary(locale);
 
   if (!isCategorySlug(slug)) {
@@ -40,6 +43,7 @@ export default async function CategoryPage({
   }
 
   const groups = await getApprovedGroups({ category: slug });
+  const page = paginate(groups, requestedPage);
   const categoryLabel = getCategoryLabel(slug, locale);
 
   return (
@@ -63,9 +67,14 @@ export default async function CategoryPage({
 
         {groups.length > 0 ? (
           <section className="grid gap-4" aria-label={categoryLabel}>
-            {groups.map((group) => (
+            {page.items.map((group) => (
               <GroupCard group={group} key={group.id} locale={locale} />
             ))}
+            <Pagination
+              locale={locale}
+              pathname={`/categories/${slug}`}
+              state={page}
+            />
           </section>
         ) : (
           <section className="rounded-lg border border-dashed border-ink/15 bg-white px-5 py-10 text-center">

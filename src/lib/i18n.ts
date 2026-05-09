@@ -121,6 +121,12 @@ type Dictionary = {
     regionLanguage: string;
     viewDetails: string;
   };
+  pagination: {
+    label: string;
+    previous: string;
+    next: string;
+    summary: (start: number, end: number, total: number) => string;
+  };
   fields: {
     platform: string;
     category: string;
@@ -291,6 +297,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       freshness: "可信度",
       regionLanguage: "地区 / 语言",
       viewDetails: "查看详情"
+    },
+    pagination: {
+      label: "分页",
+      previous: "上一页",
+      next: "下一页",
+      summary: (start, end, total) => `显示第 ${start}-${end} 个，共 ${total} 个`
     },
     fields: {
       platform: "平台",
@@ -477,6 +489,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       freshness: "Trust",
       regionLanguage: "Region / language",
       viewDetails: "View details"
+    },
+    pagination: {
+      label: "Pagination",
+      previous: "Previous",
+      next: "Next",
+      summary: (start, end, total) => `Showing ${start}-${end} of ${total}`
     },
     fields: {
       platform: "Platform",

@@ -2,10 +2,12 @@ import Link from "next/link";
 
 import { AppHeader } from "@/components/AppHeader";
 import { GroupCard } from "@/components/GroupCard";
+import { Pagination } from "@/components/Pagination";
 import { SearchPanel } from "@/components/SearchPanel";
 import { getApprovedGroups } from "@/lib/data/groups";
 import { categories, getCategoryLabel } from "@/lib/domain";
 import { getDictionary } from "@/lib/i18n";
+import { paginate, parsePageParam } from "@/lib/pagination";
 import { getRequestLocale } from "@/lib/request-locale";
 import { searchGroups } from "@/lib/search";
 
@@ -25,9 +27,11 @@ export default async function HomePage({
   const params = await searchParams;
   const locale = await getRequestLocale(firstParam(params?.lang));
   const query = firstParam(params?.q) ?? "";
+  const requestedPage = parsePageParam(firstParam(params?.page));
   const copy = getDictionary(locale);
   const approvedGroups = await getApprovedGroups();
   const groups = query ? searchGroups(approvedGroups, { query }) : approvedGroups;
+  const page = paginate(groups, requestedPage);
 
   return (
     <>
@@ -91,11 +95,19 @@ export default async function HomePage({
           </div>
 
           {groups.length > 0 ? (
-            <div className="grid gap-4">
-              {groups.map((group) => (
-                <GroupCard group={group} key={group.id} locale={locale} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-4">
+                {page.items.map((group) => (
+                  <GroupCard group={group} key={group.id} locale={locale} />
+                ))}
+              </div>
+              <Pagination
+                locale={locale}
+                pathname="/"
+                query={{ q: query }}
+                state={page}
+              />
+            </>
           ) : (
             <div className="rounded-lg border border-dashed border-ink/15 bg-white px-5 py-10 text-center">
               <h3 className="text-lg font-semibold text-ink">

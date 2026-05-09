@@ -2916,6 +2916,696 @@ const additionalCommunitySeeds: AdditionalCommunitySeed[] = [
     joinMethodValue: "https://www.quantconnect.com/forum",
     joinPolicy: "open",
     price: "free"
+  },
+  {
+    slug: "anthropic-developer-support",
+    name: "Anthropic Developer Support Community",
+    platform: "other",
+    categorySlug: "ai",
+    tags: ["Anthropic", "Claude", "API", "Developer Support"],
+    shortDescription:
+      "Anthropic 开发者支持入口，适合 Claude API、模型使用和开发问题定位。",
+    englishShortDescription:
+      "Anthropic's developer support entry point for Claude API, model usage, and debugging questions.",
+    description:
+      "适合使用 Claude API 和 Anthropic 控制台的开发者查找官方支持和社区入口。",
+    englishDescription:
+      "Useful for developers using the Claude API and Anthropic Console to find official support and community paths.",
+    suitableFor: "Claude API 开发者、AI 应用工程师、产品工程团队",
+    englishSuitableFor:
+      "Claude API developers, AI app engineers, and product engineering teams",
+    rulesSummary: "不要公开 API key、账号信息或客户敏感数据。",
+    englishRulesSummary:
+      "Do not post API keys, account information, or sensitive customer data.",
+    joinMethodLabel: "Official support entry",
+    joinMethodType: "invite_link",
+    joinMethodValue:
+      "https://support.anthropic.com/en/articles/9015913-where-can-i-get-support",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "mistral-ai-discord",
+    name: "Mistral AI Discord",
+    platform: "discord",
+    categorySlug: "ai",
+    tags: ["Mistral AI", "LLM", "Open Models", "Discord"],
+    shortDescription:
+      "Mistral AI Discord 社区，适合模型、API、开源权重和应用开发交流。",
+    englishShortDescription:
+      "Mistral AI's Discord community for models, APIs, open weights, and application development.",
+    description:
+      "适合关注 Mistral 模型、La Plateforme、开源模型和推理部署的开发者交流。",
+    englishDescription:
+      "Useful for developers following Mistral models, La Plateforme, open models, and inference deployment.",
+    suitableFor: "LLM 开发者、开源模型用户、AI 应用团队",
+    englishSuitableFor: "LLM developers, open model users, and AI application teams",
+    rulesSummary: "适合技术交流，避免分享密钥、滥用提示或敏感数据。",
+    englishRulesSummary:
+      "Use it for technical exchange and avoid sharing keys, abuse prompts, or sensitive data.",
+    joinMethodLabel: "Discord invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://discord.gg/mistralai",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "langfuse-discord",
+    name: "Langfuse Discord",
+    platform: "discord",
+    categorySlug: "ai",
+    tags: ["Langfuse", "LLMOps", "Observability", "Evaluation"],
+    shortDescription:
+      "Langfuse Discord 社区，适合 LLM 可观测性、评估和 prompt trace 问题。",
+    englishShortDescription:
+      "Langfuse's Discord community for LLM observability, evaluation, and prompt trace questions.",
+    description:
+      "面向构建生产 LLM 应用的开发者，讨论 tracing、evals、datasets 和监控。",
+    englishDescription:
+      "For developers building production LLM apps and discussing tracing, evals, datasets, and monitoring.",
+    suitableFor: "LLMOps 工程师、AI 应用团队、产品工程师",
+    englishSuitableFor: "LLMOps engineers, AI app teams, and product engineers",
+    rulesSummary: "不要发布生产 trace 中的用户隐私或客户数据。",
+    englishRulesSummary:
+      "Do not post user privacy or customer data from production traces.",
+    joinMethodLabel: "Discord invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://langfuse.com/discord",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "ollama-discord",
+    name: "Ollama Discord",
+    platform: "discord",
+    categorySlug: "ai",
+    tags: ["Ollama", "Local LLM", "Inference", "Discord"],
+    shortDescription:
+      "Ollama Discord 社区，适合本地 LLM、模型运行、硬件和部署问题。",
+    englishShortDescription:
+      "Ollama's Discord community for local LLMs, model running, hardware, and deployment questions.",
+    description:
+      "适合使用 Ollama 在本地或服务器运行模型的开发者交流模型和运行环境。",
+    englishDescription:
+      "Useful for developers running models locally or on servers with Ollama to discuss models and runtime environments.",
+    suitableFor: "本地 LLM 用户、AI 工程师、开源模型实践者",
+    englishSuitableFor:
+      "Local LLM users, AI engineers, and open model practitioners",
+    rulesSummary: "注意模型许可和安全边界，不要发布侵权数据。",
+    englishRulesSummary:
+      "Respect model licenses and safety boundaries; do not post infringing data.",
+    joinMethodLabel: "Discord invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://discord.gg/ollama",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "astro-discord",
+    name: "Astro Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Astro", "Frontend", "Static Sites", "Discord"],
+    shortDescription:
+      "Astro Discord 社区，适合 Astro、内容站、Island 架构和前端性能交流。",
+    englishShortDescription:
+      "Astro's Discord community for Astro, content sites, island architecture, and frontend performance.",
+    description:
+      "Astro 官方聊天入口，适合开发者讨论框架使用、集成、部署和生态工具。",
+    englishDescription:
+      "Astro's official chat entry point for framework usage, integrations, deployment, and ecosystem tools.",
+    suitableFor: "前端工程师、内容站开发者、Astro 用户",
+    englishSuitableFor:
+      "Frontend engineers, content-site developers, and Astro users",
+    rulesSummary: "提问时提供项目配置、Astro 版本和最小复现。",
+    englishRulesSummary:
+      "Include project configuration, Astro version, and a minimal reproduction when asking.",
+    joinMethodLabel: "Official chat",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://astro.build/chat",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "nuxt-discord",
+    name: "Nuxt Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Nuxt", "Vue", "Frontend", "Discord"],
+    shortDescription:
+      "Nuxt Discord 社区，适合 Nuxt、Vue、SSR 和全栈前端问题交流。",
+    englishShortDescription:
+      "Nuxt's Discord community for Nuxt, Vue, SSR, and full-stack frontend questions.",
+    description:
+      "Nuxt 开发者在这里交流框架、模块、部署、Nitro 和 Vue 生态问题。",
+    englishDescription:
+      "Nuxt developers discuss the framework, modules, deployment, Nitro, and Vue ecosystem issues.",
+    suitableFor: "Nuxt/Vue 开发者、前端工程师、全栈团队",
+    englishSuitableFor: "Nuxt/Vue developers, frontend engineers, and full-stack teams",
+    rulesSummary: "适合技术互助，提问时附上版本和可复现代码。",
+    englishRulesSummary:
+      "Use it for technical support and include versions plus reproducible code.",
+    joinMethodLabel: "Discord invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://discord.nuxt.com/",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "remix-discord",
+    name: "Remix Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Remix", "React Router", "Frontend", "Full-stack"],
+    shortDescription:
+      "Remix Discord 社区，适合 Remix、React Router、全栈 Web 和部署讨论。",
+    englishShortDescription:
+      "Remix's Discord community for Remix, React Router, full-stack web development, and deployment.",
+    description:
+      "适合使用 Remix 构建 Web 应用的开发者交流 loaders、actions、路由和部署。",
+    englishDescription:
+      "Useful for developers building web apps with Remix to discuss loaders, actions, routing, and deployment.",
+    suitableFor: "React/Remix 开发者、全栈工程师、Web 产品团队",
+    englishSuitableFor:
+      "React/Remix developers, full-stack engineers, and web product teams",
+    rulesSummary: "提问时提供路由、错误和复现仓库或代码片段。",
+    englishRulesSummary:
+      "Include routes, errors, and a reproduction repository or code snippet when asking.",
+    joinMethodLabel: "Discord invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://discord.gg/remix",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "deno-discord",
+    name: "Deno Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Deno", "JavaScript", "TypeScript", "Runtime"],
+    shortDescription:
+      "Deno Discord 社区，适合 TypeScript runtime、Deno Deploy 和工具链交流。",
+    englishShortDescription:
+      "Deno's Discord community for the TypeScript runtime, Deno Deploy, and tooling discussion.",
+    description:
+      "Deno 用户和贡献者可在 Discord 中讨论运行时、标准库、部署和兼容性问题。",
+    englishDescription:
+      "Deno users and contributors discuss runtime, standard library, deployment, and compatibility topics.",
+    suitableFor: "TypeScript 工程师、后端开发者、Deno 用户",
+    englishSuitableFor: "TypeScript engineers, backend developers, and Deno users",
+    rulesSummary: "适合公开技术讨论，不要发布敏感 token 或生产日志。",
+    englishRulesSummary:
+      "Use it for public technical discussion; do not post sensitive tokens or production logs.",
+    joinMethodLabel: "Discord invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://discord.gg/deno",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "bun-discord",
+    name: "Bun Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Bun", "JavaScript", "Runtime", "Tooling"],
+    shortDescription:
+      "Bun Discord 社区，适合 JavaScript runtime、打包、测试和生态兼容问题。",
+    englishShortDescription:
+      "Bun's Discord community for JavaScript runtime, bundling, testing, and ecosystem compatibility questions.",
+    description:
+      "适合使用 Bun 的开发者讨论 runtime、package manager、bundler 和 test runner。",
+    englishDescription:
+      "Useful for Bun developers discussing runtime, package manager, bundler, and test runner topics.",
+    suitableFor: "JavaScript/TypeScript 开发者、工具链工程师、Bun 用户",
+    englishSuitableFor:
+      "JavaScript/TypeScript developers, tooling engineers, and Bun users",
+    rulesSummary: "反馈问题时提供 Bun 版本、复现命令和最小项目。",
+    englishRulesSummary:
+      "Include Bun version, reproduction commands, and a minimal project when reporting issues.",
+    joinMethodLabel: "Discord invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://bun.sh/discord",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "prisma-slack",
+    name: "Prisma Slack",
+    platform: "slack",
+    categorySlug: "programming",
+    tags: ["Prisma", "Database", "ORM", "Slack"],
+    shortDescription:
+      "Prisma Slack 社区，适合 ORM、数据库 schema、迁移和 TypeScript 后端问题。",
+    englishShortDescription:
+      "Prisma's Slack community for ORM, database schema, migrations, and TypeScript backend questions.",
+    description:
+      "Prisma 用户可通过官方 Slack 入口交流 schema 设计、查询、迁移和部署问题。",
+    englishDescription:
+      "Prisma users can discuss schema design, queries, migrations, and deployment through the official Slack entry point.",
+    suitableFor: "后端工程师、TypeScript 开发者、Prisma 用户",
+    englishSuitableFor: "Backend engineers, TypeScript developers, and Prisma users",
+    rulesSummary: "提问时提供 schema、数据库类型和最小复现代码。",
+    englishRulesSummary:
+      "Include schema, database type, and minimal reproduction code when asking questions.",
+    joinMethodLabel: "Slack invite",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://slack.prisma.io/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "expo-discord",
+    name: "Expo Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Expo", "React Native", "Mobile", "Discord"],
+    shortDescription:
+      "Expo Discord 社区，适合 React Native、Expo SDK、EAS 和移动应用构建。",
+    englishShortDescription:
+      "Expo's Discord community for React Native, Expo SDK, EAS, and mobile app development.",
+    description:
+      "适合移动开发者讨论 Expo 项目配置、构建、提交、路由和原生模块问题。",
+    englishDescription:
+      "Useful for mobile developers discussing Expo project setup, builds, submissions, routing, and native modules.",
+    suitableFor: "React Native 开发者、移动工程师、Expo 用户",
+    englishSuitableFor:
+      "React Native developers, mobile engineers, and Expo users",
+    rulesSummary: "提问时说明 SDK 版本、平台和最小复现。",
+    englishRulesSummary:
+      "Include SDK version, platform, and minimal reproduction when asking.",
+    joinMethodLabel: "Official chat",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://chat.expo.dev/",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "stripe-developer-discord",
+    name: "Stripe Developer Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Stripe", "Payments", "Developers", "Discord"],
+    shortDescription:
+      "Stripe Developer Discord，适合支付集成、Webhook、Checkout 和 Billing 问题。",
+    englishShortDescription:
+      "Stripe Developer Discord for payment integrations, webhooks, Checkout, and Billing questions.",
+    description:
+      "开发者可通过 Stripe 支持入口了解开发者 Discord 和支付集成支持方式。",
+    englishDescription:
+      "Developers can use Stripe's support entry point to find the developer Discord and payment integration support paths.",
+    suitableFor: "支付集成工程师、SaaS 开发者、Stripe 用户",
+    englishSuitableFor:
+      "Payment integration engineers, SaaS developers, and Stripe users",
+    rulesSummary: "不要公开 API key、支付数据、客户隐私或可识别交易信息。",
+    englishRulesSummary:
+      "Do not post API keys, payment data, customer privacy, or identifiable transaction details.",
+    joinMethodLabel: "Official support article",
+    joinMethodType: "invite_link",
+    joinMethodValue:
+      "https://support.stripe.com/questions/join-the-stripe-developer-discord",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "sentry-discord",
+    name: "Sentry Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Sentry", "Observability", "Errors", "Discord"],
+    shortDescription:
+      "Sentry Discord 社区，适合错误监控、性能追踪和 SDK 集成问题。",
+    englishShortDescription:
+      "Sentry's Discord community for error monitoring, performance tracing, and SDK integration questions.",
+    description:
+      "适合开发团队交流 Sentry SDK、issue triage、release health 和可观测性实践。",
+    englishDescription:
+      "Useful for engineering teams discussing Sentry SDKs, issue triage, release health, and observability practice.",
+    suitableFor: "前后端工程师、SRE、可观测性团队",
+    englishSuitableFor:
+      "Frontend and backend engineers, SREs, and observability teams",
+    rulesSummary: "不要公开 DSN 之外的敏感配置、用户数据或生产错误细节。",
+    englishRulesSummary:
+      "Do not disclose sensitive configuration beyond DSNs, user data, or production error details.",
+    joinMethodLabel: "Community page",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://sentry.io/community/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "figma-community",
+    name: "Figma Community",
+    platform: "other",
+    categorySlug: "programming",
+    tags: ["Figma", "Design", "Plugins", "Community"],
+    shortDescription:
+      "Figma Community 适合发现设计文件、插件、组件资源和设计系统案例。",
+    englishShortDescription:
+      "Figma Community is for discovering design files, plugins, component resources, and design system examples.",
+    description:
+      "设计师和开发者可以发布、复用和讨论 Figma 社区资源。",
+    englishDescription:
+      "Designers and developers can publish, reuse, and discuss Figma community resources.",
+    suitableFor: "设计师、设计工程师、前端团队、插件作者",
+    englishSuitableFor:
+      "Designers, design engineers, frontend teams, and plugin authors",
+    rulesSummary: "尊重资源许可和原创作者，不要复制受限商业素材。",
+    englishRulesSummary:
+      "Respect resource licenses and creators; do not copy restricted commercial assets.",
+    joinMethodLabel: "Community hub",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://www.figma.com/community",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "webflow-forum",
+    name: "Webflow Forum",
+    platform: "other",
+    categorySlug: "programming",
+    tags: ["Webflow", "No-code", "Frontend", "Forum"],
+    shortDescription:
+      "Webflow Forum 面向 Webflow 设计师、开发者和站点建设者交流问题。",
+    englishShortDescription:
+      "Webflow Forum is for Webflow designers, developers, and site builders discussing issues.",
+    description:
+      "适合讨论 Webflow 站点结构、CMS、交互、性能和客户项目实践。",
+    englishDescription:
+      "Useful for discussing Webflow site structure, CMS, interactions, performance, and client project practice.",
+    suitableFor: "Webflow 设计师、独立站建设者、no-code makers",
+    englishSuitableFor:
+      "Webflow designers, online site builders, and no-code makers",
+    rulesSummary: "适合具体项目问题和经验分享，避免纯广告帖。",
+    englishRulesSummary:
+      "Best for concrete project questions and experience sharing; avoid pure advertising posts.",
+    joinMethodLabel: "Community forum",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://discourse.webflow.com/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "airtable-community",
+    name: "Airtable Community",
+    platform: "other",
+    categorySlug: "programming",
+    tags: ["Airtable", "No-code", "Automation", "Database"],
+    shortDescription:
+      "Airtable Community 适合数据库、自动化、接口和运营系统搭建交流。",
+    englishShortDescription:
+      "Airtable Community is for database, automation, interface, and operations-system building discussion.",
+    description:
+      "适合 no-code builders、运营团队和自动化实践者讨论 Airtable 用法。",
+    englishDescription:
+      "Useful for no-code builders, operations teams, and automation practitioners discussing Airtable usage.",
+    suitableFor: "no-code builders、运营团队、自动化工程师",
+    englishSuitableFor:
+      "No-code builders, operations teams, and automation engineers",
+    rulesSummary: "分享示例时注意隐藏表格、客户和业务敏感数据。",
+    englishRulesSummary:
+      "Hide table, customer, and business-sensitive data when sharing examples.",
+    joinMethodLabel: "Community forum",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://community.airtable.com/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "notion-community",
+    name: "Notion Community",
+    platform: "other",
+    categorySlug: "one-person-company",
+    tags: ["Notion", "Productivity", "Templates", "Community"],
+    shortDescription:
+      "Notion Community 连接 Notion 用户、模板作者、顾问和工作流实践者。",
+    englishShortDescription:
+      "Notion Community connects Notion users, template makers, consultants, and workflow practitioners.",
+    description:
+      "适合一人公司搭建知识库、CRM、项目管理和自动化工作流时寻找资源与同行。",
+    englishDescription:
+      "Useful for one-person companies building knowledge bases, CRMs, project management, and automated workflows.",
+    suitableFor: "一人公司、模板作者、生产力工具实践者",
+    englishSuitableFor:
+      "One-person companies, template makers, and productivity-tool practitioners",
+    rulesSummary: "分享模板和资源时注意版权、隐私和商业授权。",
+    englishRulesSummary:
+      "Respect copyright, privacy, and commercial licensing when sharing templates and resources.",
+    joinMethodLabel: "Official community page",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://www.notion.com/community",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "obsidian-forum",
+    name: "Obsidian Forum",
+    platform: "other",
+    categorySlug: "one-person-company",
+    tags: ["Obsidian", "PKM", "Productivity", "Forum"],
+    shortDescription:
+      "Obsidian Forum 适合个人知识管理、插件、工作流和本地笔记系统交流。",
+    englishShortDescription:
+      "Obsidian Forum is for personal knowledge management, plugins, workflows, and local note systems.",
+    description:
+      "适合一人公司和知识工作者构建长期知识库、写作系统和自动化笔记流。",
+    englishDescription:
+      "Useful for one-person companies and knowledge workers building long-term knowledge bases, writing systems, and automated note workflows.",
+    suitableFor: "知识工作者、一人公司、PKM 实践者、插件作者",
+    englishSuitableFor:
+      "Knowledge workers, one-person companies, PKM practitioners, and plugin authors",
+    rulesSummary: "适合工作流和插件交流，避免发布隐私笔记内容。",
+    englishRulesSummary:
+      "Best for workflow and plugin discussion; avoid posting private note content.",
+    joinMethodLabel: "Community forum",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://forum.obsidian.md/",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "bubble-forum",
+    name: "Bubble Forum",
+    platform: "other",
+    categorySlug: "one-person-company",
+    tags: ["Bubble", "No-code", "SaaS", "Forum"],
+    shortDescription:
+      "Bubble Forum 适合 no-code SaaS、MVP、插件和 Web app 构建问题交流。",
+    englishShortDescription:
+      "Bubble Forum is for no-code SaaS, MVPs, plugins, and web app building questions.",
+    description:
+      "适合一人公司和非技术创始人用 Bubble 搭建产品、验证需求和解决项目卡点。",
+    englishDescription:
+      "Useful for one-person companies and nontechnical founders building products, validating demand, and solving Bubble project blockers.",
+    suitableFor: "no-code makers、非技术创始人、一人公司实践者",
+    englishSuitableFor:
+      "No-code makers, nontechnical founders, and one-person company builders",
+    rulesSummary: "提问时提供 workflow、数据结构和最小复现说明。",
+    englishRulesSummary:
+      "Include workflow, data structure, and minimal reproduction details when asking.",
+    joinMethodLabel: "Community forum",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://forum.bubble.io/",
+    joinPolicy: "open",
+    price: "free",
+    activityLevel: "high"
+  },
+  {
+    slug: "framer-community",
+    name: "Framer Community",
+    platform: "other",
+    categorySlug: "one-person-company",
+    tags: ["Framer", "No-code", "Websites", "Design"],
+    shortDescription:
+      "Framer Community 适合网站搭建、组件、模板和设计转开发工作流交流。",
+    englishShortDescription:
+      "Framer Community is for website building, components, templates, and design-to-development workflows.",
+    description:
+      "适合一人公司快速搭建营销站、作品集、落地页并学习 Framer 实践。",
+    englishDescription:
+      "Useful for one-person companies quickly building marketing sites, portfolios, landing pages, and learning Framer practice.",
+    suitableFor: "一人公司、设计师、独立开发者、营销站 builders",
+    englishSuitableFor:
+      "One-person companies, designers, indie developers, and marketing-site builders",
+    rulesSummary: "适合作品反馈和工具交流，模板分享需尊重授权。",
+    englishRulesSummary:
+      "Good for work feedback and tool discussion; respect template licensing when sharing.",
+    joinMethodLabel: "Community hub",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://www.framer.community/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "square-seller-community",
+    name: "Square Seller Community",
+    platform: "other",
+    categorySlug: "overseas",
+    tags: ["Square", "Sellers", "Retail", "Ecommerce"],
+    shortDescription:
+      "Square Seller Community 面向商家讨论收款、零售、餐饮和线上销售问题。",
+    englishShortDescription:
+      "Square Seller Community helps merchants discuss payments, retail, restaurants, and online selling.",
+    description:
+      "适合出海小商家、电商和本地服务经营者交流 Square 工具与运营经验。",
+    englishDescription:
+      "Useful for global small merchants, ecommerce operators, and local service businesses discussing Square tools and operations.",
+    suitableFor: "海外小商家、DTC 运营、本地服务和零售经营者",
+    englishSuitableFor:
+      "Overseas small merchants, DTC operators, and retail or local service businesses",
+    rulesSummary: "不要公开支付、客户、订单或账号敏感信息。",
+    englishRulesSummary:
+      "Do not disclose payment, customer, order, or account-sensitive information.",
+    joinMethodLabel: "Seller community",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://www.sellercommunity.com/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "squarespace-forum",
+    name: "Squarespace Forum",
+    platform: "other",
+    categorySlug: "overseas",
+    tags: ["Squarespace", "Website", "Ecommerce", "Forum"],
+    shortDescription:
+      "Squarespace Forum 适合网站、模板、店铺和创作者业务运营问题交流。",
+    englishShortDescription:
+      "Squarespace Forum is for websites, templates, shops, and creator business operations questions.",
+    description:
+      "适合海外小企业、创作者和服务商交流 Squarespace 网站和电商功能。",
+    englishDescription:
+      "Useful for overseas small businesses, creators, and service providers discussing Squarespace websites and ecommerce features.",
+    suitableFor: "海外小企业、创作者、独立站运营者",
+    englishSuitableFor:
+      "Overseas small businesses, creators, and online store operators",
+    rulesSummary: "分享站点问题时注意隐藏客户、订单和后台信息。",
+    englishRulesSummary:
+      "Hide customer, order, and admin details when sharing site issues.",
+    joinMethodLabel: "Community forum",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://forum.squarespace.com/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "wix-studio-community",
+    name: "Wix Studio Community Forum",
+    platform: "other",
+    categorySlug: "overseas",
+    tags: ["Wix Studio", "Websites", "Agencies", "Forum"],
+    shortDescription:
+      "Wix Studio Community Forum 面向网站建设者、代理商和创意业务团队。",
+    englishShortDescription:
+      "Wix Studio Community Forum serves website builders, agencies, and creative business teams.",
+    description:
+      "适合出海服务商和独立站建设者讨论 Wix Studio、客户站点和网页交付问题。",
+    englishDescription:
+      "Useful for overseas service providers and website builders discussing Wix Studio, client sites, and web delivery.",
+    suitableFor: "网站建设者、出海服务商、创意代理商",
+    englishSuitableFor:
+      "Website builders, overseas service providers, and creative agencies",
+    rulesSummary: "适合项目问题和经验分享，避免公开客户敏感资料。",
+    englishRulesSummary:
+      "Use it for project questions and experience sharing; avoid exposing client-sensitive data.",
+    joinMethodLabel: "Community forum",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://forum.wixstudio.com/",
+    joinPolicy: "open",
+    price: "free"
+  },
+  {
+    slug: "reddit-investing",
+    name: "r/investing",
+    platform: "other",
+    categorySlug: "investment",
+    tags: ["Investing", "Reddit", "Stocks", "Portfolio"],
+    shortDescription:
+      "r/investing 是公开投资讨论社区，覆盖长期投资、市场和组合话题。",
+    englishShortDescription:
+      "r/investing is a public investing community covering long-term investing, markets, and portfolio topics.",
+    description:
+      "适合观察普通投资者对市场、基金、股票和资产配置的讨论。",
+    englishDescription:
+      "Useful for observing retail investor discussion around markets, funds, stocks, and asset allocation.",
+    suitableFor: "长期投资者、个人财务学习者、市场观察者",
+    englishSuitableFor:
+      "Long-term investors, personal finance learners, and market observers",
+    rulesSummary: "社区内容不构成投资建议，注意识别风险和利益冲突。",
+    englishRulesSummary:
+      "Community content is not investment advice; watch for risk and conflicts of interest.",
+    joinMethodLabel: "Public subreddit",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://www.reddit.com/r/investing/",
+    joinPolicy: "open",
+    price: "free",
+    ownerVerified: false,
+    activityLevel: "high"
+  },
+  {
+    slug: "reddit-personal-finance",
+    name: "r/personalfinance",
+    platform: "other",
+    categorySlug: "investment",
+    tags: ["Personal Finance", "Budgeting", "Investing", "Reddit"],
+    shortDescription:
+      "r/personalfinance 是个人财务、预算、储蓄、债务和投资基础讨论社区。",
+    englishShortDescription:
+      "r/personalfinance is a community for personal finance, budgeting, saving, debt, and investing basics.",
+    description:
+      "适合学习美国语境下的个人财务决策、应急基金、退休账户和基础投资。",
+    englishDescription:
+      "Useful for learning U.S.-context personal finance decisions, emergency funds, retirement accounts, and investing basics.",
+    suitableFor: "个人财务学习者、长期投资初学者、预算管理者",
+    englishSuitableFor:
+      "Personal finance learners, beginner long-term investors, and budget planners",
+    rulesSummary: "财务建议需要结合个人情况，社区内容不能替代专业意见。",
+    englishRulesSummary:
+      "Financial guidance depends on personal context and community content does not replace professional advice.",
+    joinMethodLabel: "Public subreddit",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://www.reddit.com/r/personalfinance/",
+    joinPolicy: "open",
+    price: "free",
+    ownerVerified: false,
+    activityLevel: "high"
+  },
+  {
+    slug: "reddit-stocks",
+    name: "r/stocks",
+    platform: "other",
+    categorySlug: "investment",
+    tags: ["Stocks", "Equity", "Reddit", "Markets"],
+    shortDescription:
+      "r/stocks 是股票市场、公司研究和交易观点的公开讨论社区。",
+    englishShortDescription:
+      "r/stocks is a public discussion community for equity markets, company research, and trading views.",
+    description:
+      "适合观察股票投资者对公司基本面、新闻和市场走势的讨论。",
+    englishDescription:
+      "Useful for observing stock investors discussing company fundamentals, news, and market moves.",
+    suitableFor: "股票投资者、市场观察者、公司研究学习者",
+    englishSuitableFor:
+      "Stock investors, market observers, and company research learners",
+    rulesSummary: "个股讨论不构成投资建议，注意高波动和信息来源质量。",
+    englishRulesSummary:
+      "Stock discussion is not investment advice; watch volatility and source quality.",
+    joinMethodLabel: "Public subreddit",
+    joinMethodType: "invite_link",
+    joinMethodValue: "https://www.reddit.com/r/stocks/",
+    joinPolicy: "open",
+    price: "free",
+    ownerVerified: false,
+    activityLevel: "high"
   }
 ];
 
