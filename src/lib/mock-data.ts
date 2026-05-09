@@ -78,6 +78,41 @@ export const sampleGroups: Group[] = [
     moderationStatus: "approved"
   },
   {
+    id: "grp_one_person_company_wechat",
+    slug: "one-person-company-wechat",
+    name: "一人公司实践群 / One-Person Company Lab",
+    platform: "wechat",
+    categorySlug: "indie-dev",
+    tags: ["一人公司", "One-Person Company", "Solo Founder", "独立开发", "自动化"],
+    shortDescription:
+      "面向 solo founders、独立开发者和小型自动化业务实践者的中文交流群。",
+    description:
+      "A Chinese-friendly WeChat group for builders running or exploring one-person companies: product selection, automation workflows, AI leverage, lightweight operations, pricing, and sustainable revenue.",
+    suitableAudience: "一人公司实践者、solo founders、独立开发者、自动化创业者",
+    suitableFor: "一人公司实践者、solo founders、独立开发者、自动化创业者",
+    language: "中文 / English keywords",
+    region: "全球 / Global",
+    activityLevel: "medium",
+    joinPolicy: "approval_required",
+    price: "free",
+    rulesSummary: "鼓励实战复盘和工具分享，禁止割韭菜项目、刷屏广告和无关推广。",
+    ownerVerified: true,
+    lastVerifiedAt: "2026-05-09",
+    trustSignals: ["recently_verified", "owner_maintained"],
+    joinMethods: [
+      {
+        id: "jm_one_person_company_wechat_admin",
+        type: "admin_contact",
+        label: "联系管理员入群",
+        value: "提交你的项目方向或正在实践的一人公司主题后审核",
+        visibility: "public",
+        lastVerifiedAt: "2026-05-09",
+        reviewStatus: "approved"
+      }
+    ],
+    moderationStatus: "approved"
+  },
+  {
     id: "grp_overseas_business_wechat",
     slug: "overseas-business-wechat",
     name: "Overseas Business Dock / 出海业务码头",

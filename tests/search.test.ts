@@ -74,6 +74,20 @@ describe("group search", () => {
     );
   });
 
+  it("finds one-person company groups in Chinese and English", () => {
+    const chineseResults = searchGroups(sampleGroups, { query: "一人公司" });
+    const englishResults = searchGroups(sampleGroups, {
+      query: "One-Person Company"
+    });
+
+    expect(
+      chineseResults.some((group) => group.slug === "one-person-company-wechat")
+    ).toBe(true);
+    expect(
+      englishResults.some((group) => group.slug === "one-person-company-wechat")
+    ).toBe(true);
+  });
+
   it("standardizes group category data on categorySlug", () => {
     expect(sampleGroups.every((group) => !("category" in group))).toBe(true);
   });
