@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "admin:promote": "tsx scripts/promote-admin.ts",
+    "auth:link": "tsx scripts/create-login-link.ts",
     "seed:samples": "tsx scripts/seed-sample-groups.ts",
     "test": "vitest run",
     "test:watch": "vitest"

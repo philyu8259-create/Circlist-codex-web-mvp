@@ -47,6 +47,13 @@ To make a signed-in user an admin, have them sign in once, then run:
 npm run admin:promote -- user@example.com
 ```
 
+Supabase's built-in email provider is heavily rate-limited. For local testing,
+you can generate a one-time login link without sending email:
+
+```bash
+npm run auth:link -- user@example.com
+```
+
 ## Bilingual Behavior
 
 Circlist supports Chinese and English in the MVP. Use `?lang=zh` or `?lang=en` on supported routes to select a language directly. The in-app language switch preserves the current path and updates the `lang` query parameter.
