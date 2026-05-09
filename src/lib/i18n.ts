@@ -38,6 +38,14 @@ type Dictionary = {
     freshness: string;
     ownerStatus: string;
     trustSignals: string;
+    officialStatus: string;
+    officialMaintained: string;
+    publicUnofficial: string;
+    joinNow: string;
+    externalLinkHint: string;
+    reportLinkIssue: string;
+    investmentRiskTitle: string;
+    investmentRiskBody: string;
     noJoinMethods: string;
     claimTitle: string;
     claimIntro: string;
@@ -224,6 +232,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       freshness: "新鲜度",
       ownerStatus: "群主状态",
       trustSignals: "可信信号",
+      officialStatus: "维护状态",
+      officialMaintained: "官方或群主已核验",
+      publicUnofficial: "公开社区，非官方维护",
+      joinNow: "打开加入入口",
+      externalLinkHint: "外部链接，请先确认社区规则和平台安全提示。",
+      reportLinkIssue: "反馈链接失效或信息过期",
+      investmentRiskTitle: "投资风险提示",
+      investmentRiskBody:
+        "社区内容仅供交流，不构成投资建议。加入投资类社区前，请自行核验信息来源、利益冲突和风险承受能力。",
       noJoinMethods: "暂无可公开展示的已审核加入方式。",
       claimTitle: "认领这个群组",
       claimIntro: "如果你是群主或管理员，可以提交证明，审核后会开放维护权限。",
@@ -420,6 +437,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       freshness: "Freshness",
       ownerStatus: "Owner status",
       trustSignals: "Trust signals",
+      officialStatus: "Maintainer status",
+      officialMaintained: "Official or owner verified",
+      publicUnofficial: "Public community, not owner verified",
+      joinNow: "Open join page",
+      externalLinkHint:
+        "External link. Check the community rules and platform safety prompts before joining.",
+      reportLinkIssue: "Report an expired link or outdated information",
+      investmentRiskTitle: "Investment risk note",
+      investmentRiskBody:
+        "Community content is for discussion only and is not investment advice. Verify sources, conflicts of interest, and your own risk tolerance before joining investment communities.",
       noJoinMethods: "No approved public join methods are available yet.",
       claimTitle: "Claim this group",
       claimIntro:

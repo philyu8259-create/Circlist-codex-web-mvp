@@ -6,6 +6,11 @@ import { claimGroup } from "@/lib/actions/groups";
 import { reportGroup } from "@/lib/actions/reports";
 import { getApprovedGroupBySlug } from "@/lib/data/groups";
 import { getCategoryLabel, getGroupText, getPlatformLabel } from "@/lib/domain";
+import {
+  getOwnerTrustStatus,
+  isExternalJoinValue,
+  shouldShowInvestmentRisk
+} from "@/lib/group-detail";
 import { getDictionary } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/request-locale";
 
@@ -43,6 +48,12 @@ export default async function GroupDetailPage({
     (method) =>
       method.reviewStatus === "approved" && method.visibility === "public"
   );
+  const ownerTrustStatus = getOwnerTrustStatus(group);
+  const ownerTrustCopy =
+    ownerTrustStatus === "verified"
+      ? copy.detail.officialMaintained
+      : copy.detail.publicUnofficial;
+  const showInvestmentRisk = shouldShowInvestmentRisk(group.categorySlug);
 
   return (
     <>
@@ -69,6 +80,17 @@ export default async function GroupDetailPage({
           <p className="mt-3 max-w-3xl text-base leading-7 text-ink/68">
             {getGroupText(group, "shortDescription", locale)}
           </p>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <TrustSummaryItem label={copy.detail.officialStatus}>
+              {ownerTrustCopy}
+            </TrustSummaryItem>
+            <TrustSummaryItem label={copy.fields.lastVerified}>
+              {group.lastVerifiedAt ?? "-"}
+            </TrustSummaryItem>
+            <TrustSummaryItem label={copy.fields.joinPolicy}>
+              {copy.joinPolicies[group.joinPolicy]}
+            </TrustSummaryItem>
+          </div>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[1fr_20rem]">
@@ -138,8 +160,29 @@ export default async function GroupDetailPage({
                       </span>
                     </div>
                     <p className="mt-2 break-words text-sm leading-6 text-ink/70">
-                      {method.value}
+                      {isExternalJoinValue(method.value) ? (
+                        <a
+                          className="inline-flex min-h-11 items-center justify-center rounded-md bg-leaf px-4 py-2 text-sm font-semibold text-white transition hover:bg-coral"
+                          href={method.value}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          {copy.detail.joinNow}
+                        </a>
+                      ) : (
+                        method.value
+                      )}
                     </p>
+                    {isExternalJoinValue(method.value) ? (
+                      <>
+                        <p className="mt-2 break-words text-xs leading-5 text-ink/50">
+                          {method.value}
+                        </p>
+                        <p className="mt-2 text-xs leading-5 text-ink/50">
+                          {copy.detail.externalLinkHint}
+                        </p>
+                      </>
+                    ) : null}
                     <p className="mt-3 text-xs text-ink/50">
                       {copy.fields.lastVerified}:{" "}
                       {method.lastVerifiedAt ?? group.lastVerifiedAt ?? "-"}
@@ -152,6 +195,12 @@ export default async function GroupDetailPage({
                 {copy.detail.noJoinMethods}
               </p>
             )}
+            <Link
+              className="mt-4 inline-flex text-sm font-semibold text-leaf transition hover:text-coral"
+              href="#report-group"
+            >
+              {copy.detail.reportLinkIssue}
+            </Link>
           </div>
 
           <div className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
@@ -163,9 +212,7 @@ export default async function GroupDetailPage({
                 {copy.activityLevels[group.activityLevel]}
               </DetailRow>
               <DetailRow label={copy.detail.ownerStatus}>
-                {group.ownerVerified
-                  ? copy.ownerStatuses.verified
-                  : copy.ownerStatuses.unverified}
+                {ownerTrustCopy}
               </DetailRow>
             </dl>
             <h3 className="mt-5 text-sm font-semibold text-ink">
@@ -183,6 +230,17 @@ export default async function GroupDetailPage({
             </ul>
           </div>
         </section>
+
+        {showInvestmentRisk ? (
+          <section className="rounded-lg border border-coral/25 bg-coral/5 p-5">
+            <h2 className="text-lg font-semibold text-ink">
+              {copy.detail.investmentRiskTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-ink/70">
+              {copy.detail.investmentRiskBody}
+            </p>
+          </section>
+        ) : null}
 
         <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-ink">
@@ -230,6 +288,7 @@ export default async function GroupDetailPage({
           <form
             action={reportGroup}
             className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
+            id="report-group"
           >
             <input name="lang" type="hidden" value={locale} />
             <input name="groupSlug" type="hidden" value={group.slug} />
@@ -281,6 +340,25 @@ export default async function GroupDetailPage({
         </section>
       </main>
     </>
+  );
+}
+
+function TrustSummaryItem({
+  label,
+  children
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md border border-ink/10 bg-white px-4 py-3 shadow-sm">
+      <p className="text-xs font-medium uppercase tracking-wide text-ink/45">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-semibold leading-5 text-ink">
+        {children}
+      </p>
+    </div>
   );
 }
 
