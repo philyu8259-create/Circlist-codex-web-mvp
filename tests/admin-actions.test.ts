@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildPublishedGroupSlug,
+  inferJoinPolicy,
   validateReviewOwnershipClaimInput,
   validateReviewReportInput,
   validateReviewSubmissionInput
@@ -86,5 +88,25 @@ describe("validateReviewReportInput", () => {
       decision: "approved",
       reviewerNotes: null
     });
+  });
+});
+
+describe("submission publishing helpers", () => {
+  it("builds stable public group slugs from English names", () => {
+    expect(
+      buildPublishedGroupSlug("LangChain Community Slack", submissionId)
+    ).toBe("langchain-community-slack-123e4567");
+  });
+
+  it("falls back to a generated group slug for non-ASCII names", () => {
+    expect(buildPublishedGroupSlug("一人公司交流群", submissionId)).toBe(
+      "group-123e4567"
+    );
+  });
+
+  it("infers join policy from submitted join method type", () => {
+    expect(inferJoinPolicy("admin_contact")).toBe("admin_contact");
+    expect(inferJoinPolicy("application_form")).toBe("approval_required");
+    expect(inferJoinPolicy("invite_link")).toBe("open");
   });
 });

@@ -26,8 +26,12 @@ type SubmissionQueueRow = {
   id: string;
   proposed_name: string;
   proposed_platform: string;
+  proposed_join_method: string | null;
+  proposed_join_value: string | null;
+  proposed_payload: unknown;
   moderation_status: string;
   created_at: string | null;
+  categories: { slug: string | null; name_zh: string | null; name_en: string | null } | null;
 };
 
 type ClaimQueueRow = {
@@ -35,6 +39,7 @@ type ClaimQueueRow = {
   claim_status: string;
   evidence: string;
   created_at: string | null;
+  groups: { name: string | null; slug: string | null } | null;
 };
 
 type ReportQueueRow = {
@@ -64,6 +69,34 @@ function formatDate(value: string | null | undefined, locale: Locale): string {
     dateStyle: "medium",
     timeStyle: "short"
   }).format(new Date(value));
+}
+
+function payloadObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function payloadText(payload: unknown, key: string): string {
+  const value = payloadObject(payload)[key];
+
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function formatSubmissionDescription(
+  item: SubmissionQueueRow,
+  locale: Locale
+): string {
+  const category =
+    locale === "en" ? item.categories?.name_en : item.categories?.name_zh;
+  const parts = [
+    item.proposed_platform,
+    category ?? item.categories?.slug ?? "",
+    payloadText(item.proposed_payload, "shortDescription"),
+    item.proposed_join_value ?? item.proposed_join_method ?? ""
+  ].filter(Boolean);
+
+  return parts.join(" · ");
 }
 
 async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
@@ -102,13 +135,25 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
     const [submissionsResult, claimsResult, reportsResult] = await Promise.all([
       supabase
         .from("group_submissions")
-        .select("id, proposed_name, proposed_platform, moderation_status, created_at")
+        .select(
+          `
+          id,
+          proposed_name,
+          proposed_platform,
+          proposed_join_method,
+          proposed_join_value,
+          proposed_payload,
+          moderation_status,
+          created_at,
+          categories(slug, name_zh, name_en)
+        `
+        )
         .eq("moderation_status", "pending")
         .order("created_at", { ascending: true })
         .limit(10),
       supabase
         .from("ownership_claims")
-        .select("id, claim_status, evidence, created_at")
+        .select("id, claim_status, evidence, created_at, groups(name, slug)")
         .eq("claim_status", "pending")
         .order("created_at", { ascending: true })
         .limit(10),
@@ -138,13 +183,13 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
       submissions: submissionRows.map((item) => ({
         id: item.id,
         title: item.proposed_name,
-        description: item.proposed_platform,
+        description: formatSubmissionDescription(item, locale),
         status: item.moderation_status,
         meta: formatDate(item.created_at, locale)
       })),
       claims: claimRows.map((item) => ({
         id: item.id,
-        title: item.id,
+        title: item.groups?.name ?? item.groups?.slug ?? item.id,
         description: item.evidence,
         status: item.claim_status,
         meta: formatDate(item.created_at, locale)
