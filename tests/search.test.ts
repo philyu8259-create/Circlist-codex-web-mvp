@@ -21,6 +21,37 @@ describe("group search", () => {
     ).toBe(true);
   });
 
+  it("filters by price and join policy", () => {
+    const results = searchGroups(sampleGroups, {
+      price: "paid",
+      joinPolicy: "approval_required"
+    });
+
+    expect(results.length).toBeGreaterThan(0);
+    expect(
+      results.every(
+        (group) =>
+          group.price === "paid" && group.joinPolicy === "approval_required"
+      )
+    ).toBe(true);
+    expect(results.some((group) => group.slug === "microconf-connect")).toBe(
+      true
+    );
+  });
+
+  it("sorts by activity and name", () => {
+    const byActivity = searchGroups(sampleGroups, { sort: "activity" });
+    const byName = searchGroups(sampleGroups, { sort: "name" });
+
+    expect(byActivity[0].activityLevel).toBe("high");
+    expect(byName.slice(0, 5).map((group) => group.name)).toEqual(
+      byName
+        .slice(0, 5)
+        .map((group) => group.name)
+        .toSorted((a, b) => a.localeCompare(b))
+    );
+  });
+
   it("returns no groups for unmatched queries", () => {
     expect(searchGroups(sampleGroups, { query: "definitely-not-a-group" })).toEqual(
       []

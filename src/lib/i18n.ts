@@ -114,6 +114,15 @@ type Dictionary = {
     label: string;
     placeholder: string;
     button: string;
+    platform: string;
+    price: string;
+    joinPolicy: string;
+    sort: string;
+    allPlatforms: string;
+    allPrices: string;
+    allJoinPolicies: string;
+    clear: string;
+    sortOptions: Record<"recent" | "activity" | "name", string>;
   };
   card: {
     activity: string;
@@ -290,7 +299,20 @@ const dictionaries: Record<Locale, Dictionary> = {
     search: {
       label: "搜索兴趣群",
       placeholder: "搜索 AI、出海、独立开发...",
-      button: "搜索"
+      button: "搜索",
+      platform: "平台",
+      price: "价格",
+      joinPolicy: "加入方式",
+      sort: "排序",
+      allPlatforms: "全部平台",
+      allPrices: "全部价格",
+      allJoinPolicies: "全部加入方式",
+      clear: "清除筛选",
+      sortOptions: {
+        recent: "最近核验",
+        activity: "活跃度优先",
+        name: "名称 A-Z"
+      }
     },
     card: {
       activity: "活跃度",
@@ -482,7 +504,20 @@ const dictionaries: Record<Locale, Dictionary> = {
     search: {
       label: "Search groups",
       placeholder: "Search AI, overseas, indie dev...",
-      button: "Search"
+      button: "Search",
+      platform: "Platform",
+      price: "Price",
+      joinPolicy: "Join policy",
+      sort: "Sort",
+      allPlatforms: "All platforms",
+      allPrices: "All prices",
+      allJoinPolicies: "All join policies",
+      clear: "Clear filters",
+      sortOptions: {
+        recent: "Recently verified",
+        activity: "Most active",
+        name: "Name A-Z"
+      }
     },
     card: {
       activity: "Activity",

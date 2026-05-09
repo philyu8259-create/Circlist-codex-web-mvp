@@ -5,11 +5,18 @@ import { GroupCard } from "@/components/GroupCard";
 import { Pagination } from "@/components/Pagination";
 import { SearchPanel } from "@/components/SearchPanel";
 import { getApprovedGroups } from "@/lib/data/groups";
-import { categories, getCategoryLabel } from "@/lib/domain";
+import {
+  categories,
+  getCategoryLabel,
+  platforms,
+  type Group,
+  type JoinPolicy,
+  type Platform
+} from "@/lib/domain";
 import { getDictionary } from "@/lib/i18n";
 import { paginate, parsePageParam } from "@/lib/pagination";
 import { getRequestLocale } from "@/lib/request-locale";
-import { searchGroups } from "@/lib/search";
+import { searchGroups, type GroupSort } from "@/lib/search";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -17,6 +24,35 @@ type SearchParams = Promise<
 
 function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function parsePlatform(value: string | undefined): Platform | "all" {
+  return value && platforms.includes(value as Platform)
+    ? (value as Platform)
+    : "all";
+}
+
+function parsePrice(value: string | undefined): Group["price"] | "all" {
+  return value === "free" || value === "paid" || value === "unknown"
+    ? value
+    : "all";
+}
+
+function parseJoinPolicy(value: string | undefined): JoinPolicy | "all" {
+  return value === "open" ||
+    value === "approval_required" ||
+    value === "admin_contact" ||
+    value === "invite_only"
+    ? value
+    : "all";
+}
+
+function parseSort(value: string | undefined): GroupSort {
+  return value === "activity" || value === "name" ? value : "recent";
+}
+
+function queryValue(value: string, fallback: string): string | undefined {
+  return value === fallback ? undefined : value;
 }
 
 export default async function HomePage({
@@ -27,15 +63,32 @@ export default async function HomePage({
   const params = await searchParams;
   const locale = await getRequestLocale(firstParam(params?.lang));
   const query = firstParam(params?.q) ?? "";
+  const platform = parsePlatform(firstParam(params?.platform));
+  const price = parsePrice(firstParam(params?.price));
+  const joinPolicy = parseJoinPolicy(firstParam(params?.joinPolicy));
+  const sort = parseSort(firstParam(params?.sort));
   const requestedPage = parsePageParam(firstParam(params?.page));
   const copy = getDictionary(locale);
   const approvedGroups = await getApprovedGroups();
-  const groups = query ? searchGroups(approvedGroups, { query }) : approvedGroups;
+  const groups = searchGroups(approvedGroups, {
+    query,
+    platform,
+    price,
+    joinPolicy,
+    sort
+  });
   const page = paginate(groups, requestedPage);
+  const activeQuery = {
+    q: query,
+    platform: queryValue(platform, "all"),
+    price: queryValue(price, "all"),
+    joinPolicy: queryValue(joinPolicy, "all"),
+    sort: queryValue(sort, "recent")
+  };
 
   return (
     <>
-      <AppHeader locale={locale} pathname="/" query={{ q: query }} />
+      <AppHeader locale={locale} pathname="/" query={activeQuery} />
       <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-5 py-7">
         <section className="grid gap-5 lg:grid-cols-[1fr_15rem] lg:items-end">
           <div>
@@ -54,7 +107,11 @@ export default async function HomePage({
           </div>
         </section>
 
-        <SearchPanel locale={locale} query={query} />
+        <SearchPanel
+          filters={{ platform, price, joinPolicy, sort }}
+          locale={locale}
+          query={query}
+        />
 
         <section aria-labelledby="categories-title">
           <div className="mb-3 flex items-center justify-between gap-4">
@@ -104,7 +161,7 @@ export default async function HomePage({
               <Pagination
                 locale={locale}
                 pathname="/"
-                query={{ q: query }}
+                query={activeQuery}
                 state={page}
               />
             </>

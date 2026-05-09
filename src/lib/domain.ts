@@ -58,6 +58,11 @@ export type CategorySlug = (typeof categories)[number]["slug"];
 export type Platform = (typeof platforms)[number];
 export type ModerationStatus = (typeof moderationStatuses)[number];
 export type TrustSignal = (typeof trustSignals)[number];
+export type JoinPolicy =
+  | "open"
+  | "approval_required"
+  | "admin_contact"
+  | "invite_only";
 
 export type JoinMethodType =
   | "qr_code"
@@ -107,7 +112,7 @@ export type Group = {
   language: string;
   region: string;
   activityLevel: "low" | "medium" | "high" | "unknown";
-  joinPolicy: "open" | "approval_required" | "admin_contact" | "invite_only";
+  joinPolicy: JoinPolicy;
   price: "free" | "paid" | "unknown";
   rulesSummary: string;
   ownerVerified: boolean;

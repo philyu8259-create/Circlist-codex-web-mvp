@@ -4,14 +4,27 @@ import {
   getPlatformLabel,
   type CategorySlug,
   type Group,
+  type JoinPolicy,
   type Platform
 } from "./domain";
+
+export type GroupSort = "recent" | "activity" | "name";
 
 export type GroupSearchFilters = {
   query?: string;
   category?: CategorySlug | "all";
   platform?: Platform | "all";
+  price?: Group["price"] | "all";
+  joinPolicy?: JoinPolicy | "all";
+  sort?: GroupSort;
   includeUnapproved?: boolean;
+};
+
+const activityRank: Record<Group["activityLevel"], number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+  unknown: 0
 };
 
 export function searchGroups(
@@ -20,7 +33,7 @@ export function searchGroups(
 ): Group[] {
   const query = filters.query?.trim().toLowerCase();
 
-  return groups.filter((group) => {
+  const filteredGroups = groups.filter((group) => {
     if (!filters.includeUnapproved && group.moderationStatus !== "approved") {
       return false;
     }
@@ -37,6 +50,18 @@ export function searchGroups(
       filters.platform &&
       filters.platform !== "all" &&
       group.platform !== filters.platform
+    ) {
+      return false;
+    }
+
+    if (filters.price && filters.price !== "all" && group.price !== filters.price) {
+      return false;
+    }
+
+    if (
+      filters.joinPolicy &&
+      filters.joinPolicy !== "all" &&
+      group.joinPolicy !== filters.joinPolicy
     ) {
       return false;
     }
@@ -69,5 +94,29 @@ export function searchGroups(
       .toLowerCase();
 
     return haystack.includes(query);
+  });
+
+  return sortGroups(filteredGroups, filters.sort);
+}
+
+function sortGroups(groups: Group[], sort: GroupSort = "recent"): Group[] {
+  return [...groups].sort((a, b) => {
+    if (sort === "name") {
+      return a.name.localeCompare(b.name);
+    }
+
+    if (sort === "activity") {
+      return (
+        activityRank[b.activityLevel] - activityRank[a.activityLevel] ||
+        b.lastVerifiedAt?.localeCompare(a.lastVerifiedAt ?? "") ||
+        a.name.localeCompare(b.name)
+      );
+    }
+
+    return (
+      b.lastVerifiedAt?.localeCompare(a.lastVerifiedAt ?? "") ||
+      activityRank[b.activityLevel] - activityRank[a.activityLevel] ||
+      a.name.localeCompare(b.name)
+    );
   });
 }
