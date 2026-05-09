@@ -63,6 +63,10 @@ type Dictionary = {
     description: string;
     joinMethodType: string;
     joinMethodValue: string;
+    groupLink: string;
+    groupLinkHint: string;
+    qrCode: string;
+    qrCodeHint: string;
     language: string;
     region: string;
     rulesSummary: string;
@@ -229,7 +233,11 @@ const dictionaries: Record<Locale, Dictionary> = {
       shortDescription: "一句话简介",
       description: "详细介绍",
       joinMethodType: "加入方式类型",
-      joinMethodValue: "加入方式内容",
+      joinMethodValue: "补充说明",
+      groupLink: "群链接 / 邀请链接",
+      groupLinkHint: "适合 Telegram、Discord、Slack 或公开申请表链接。",
+      qrCode: "二维码图片",
+      qrCodeHint: "支持 PNG、JPG、WebP，最大 5 MB。微信群二维码过期后可重新提交更新。",
       language: "语言",
       region: "地区",
       rulesSummary: "群规摘要",
@@ -406,7 +414,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       shortDescription: "Short description",
       description: "Description",
       joinMethodType: "Join method type",
-      joinMethodValue: "Join method value",
+      joinMethodValue: "Additional instructions",
+      groupLink: "Group link / invite link",
+      groupLinkHint:
+        "Useful for Telegram, Discord, Slack, or public application forms.",
+      qrCode: "QR code image",
+      qrCodeHint: "PNG, JPG, or WebP up to 5 MB. Expired QR codes can be updated later.",
       language: "Language",
       region: "Region",
       rulesSummary: "Rules summary",

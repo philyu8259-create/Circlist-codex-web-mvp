@@ -57,6 +57,68 @@ describe("validateGroupSubmission", () => {
     ).toEqual({ ok: true });
   });
 
+  it("accepts a group link as the join method detail", () => {
+    expect(
+      validateGroupSubmission({
+        name: "AI Builders",
+        platform: "telegram",
+        categorySlug: "ai",
+        shortDescription: "A focused AI community.",
+        description: "A community for builders working on AI products.",
+        joinMethodType: "invite_link",
+        groupLink: "https://t.me/example"
+      })
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects invalid group links", () => {
+    const result = validateGroupSubmission({
+      name: "AI Builders",
+      platform: "telegram",
+      categorySlug: "ai",
+      shortDescription: "A focused AI community.",
+      description: "A community for builders working on AI products.",
+      joinMethodType: "invite_link",
+      groupLink: "not-a-url"
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain("Group link must be a valid URL.");
+    }
+  });
+
+  it("accepts an uploaded QR image as the join method detail", () => {
+    expect(
+      validateGroupSubmission({
+        name: "AI Builders",
+        platform: "wechat",
+        categorySlug: "ai",
+        shortDescription: "A focused AI community.",
+        description: "A community for builders working on AI products.",
+        joinMethodType: "qr_code",
+        qrCode: new File(["qr"], "qr.png", { type: "image/png" })
+      })
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects unsupported QR upload file types", () => {
+    const result = validateGroupSubmission({
+      name: "AI Builders",
+      platform: "wechat",
+      categorySlug: "ai",
+      shortDescription: "A focused AI community.",
+      description: "A community for builders working on AI products.",
+      joinMethodType: "qr_code",
+      qrCode: new File(["qr"], "qr.txt", { type: "text/plain" })
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain("QR code must be a PNG, JPG, or WebP image.");
+    }
+  });
+
   it("rejects a one-character group name", () => {
     const result = validateGroupSubmission({
       name: "A",

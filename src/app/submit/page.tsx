@@ -130,8 +130,35 @@ export default async function SubmitPage({
               <input
                 className="rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf"
                 name="joinMethodValue"
-                required
               />
+            </label>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="grid gap-2 text-sm font-medium text-ink">
+              {copy.submit.groupLink}
+              <input
+                className="rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf"
+                name="groupLink"
+                placeholder="https://"
+                type="url"
+              />
+              <span className="text-xs font-normal leading-5 text-ink/55">
+                {copy.submit.groupLinkHint}
+              </span>
+            </label>
+
+            <label className="grid gap-2 text-sm font-medium text-ink">
+              {copy.submit.qrCode}
+              <input
+                accept="image/png,image/jpeg,image/webp"
+                className="rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition file:mr-3 file:rounded-md file:border-0 file:bg-leaf/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-leaf focus:border-leaf"
+                name="qrCode"
+                type="file"
+              />
+              <span className="text-xs font-normal leading-5 text-ink/55">
+                {copy.submit.qrCodeHint}
+              </span>
             </label>
           </div>
 
