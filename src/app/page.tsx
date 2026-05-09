@@ -89,8 +89,8 @@ export default async function HomePage({
   return (
     <>
       <AppHeader locale={locale} pathname="/" query={activeQuery} />
-      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-5 py-7">
-        <section className="grid gap-5 lg:grid-cols-[1fr_15rem] lg:items-end">
+      <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-7 px-5 py-7">
+        <section className="grid gap-5 rounded-lg border border-ink/10 bg-white px-5 py-6 shadow-sm lg:grid-cols-[1fr_14rem] lg:items-end">
           <div>
             <h1 className="max-w-3xl text-3xl font-semibold leading-tight text-ink sm:text-4xl">
               {copy.home.title}
@@ -99,7 +99,7 @@ export default async function HomePage({
               {copy.home.intro}
             </p>
           </div>
-          <div className="rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm text-ink/70 shadow-sm">
+          <div className="rounded-md bg-leaf/10 px-4 py-3 text-sm text-ink/70">
             <span className="block text-2xl font-semibold text-leaf">
               {approvedGroups.length}
             </span>

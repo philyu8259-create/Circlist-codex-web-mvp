@@ -25,8 +25,8 @@ export async function AppHeader({
   const isAdmin = profile?.role === "admin";
 
   return (
-    <header className="border-b border-ink/10 bg-paper/95">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-4">
+    <header className="sticky top-0 z-20 border-b border-ink/10 bg-paper/95 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <Link className="min-w-0" href={`/${langQuery}`}>
           <span className="block text-lg font-semibold leading-tight text-ink">
             {copy.appName}
@@ -34,28 +34,28 @@ export async function AppHeader({
           <span className="block text-xs text-ink/60">{copy.subtitle}</span>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:w-auto sm:gap-3 sm:overflow-visible sm:pb-0">
           <Link
-            className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
+            className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
             href={`/${langQuery}`}
           >
             {copy.nav.browse}
           </Link>
           <Link
-            className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
+            className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
             href={`/submit${langQuery}`}
           >
             {copy.nav.submit}
           </Link>
           <Link
-            className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
+            className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
             href={`/my-groups${langQuery}`}
           >
             {copy.nav.myGroups}
           </Link>
           {isAdmin ? (
             <Link
-              className="hidden rounded-md bg-ink px-3 py-2 text-sm font-semibold text-white transition hover:bg-leaf sm:inline"
+              className="shrink-0 rounded-md bg-ink px-3 py-2 text-sm font-semibold text-white transition hover:bg-leaf"
               href={`/admin${langQuery}`}
             >
               {copy.nav.admin}
@@ -65,7 +65,7 @@ export async function AppHeader({
             <form action={signOut}>
               <input name="lang" type="hidden" value={locale} />
               <button
-                className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
+                className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
                 type="submit"
               >
                 {copy.nav.signOut}
@@ -73,7 +73,7 @@ export async function AppHeader({
             </form>
           ) : (
             <Link
-              className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
+              className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
               href={`/login${langQuery}`}
             >
               {copy.nav.signIn}
