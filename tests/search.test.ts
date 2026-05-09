@@ -88,6 +88,21 @@ describe("group search", () => {
     ).toBe(true);
   });
 
+  it("treats one-person company as a first-level category", () => {
+    const results = searchGroups(sampleGroups, {
+      category: "one-person-company"
+    });
+
+    expect(getCategoryLabel("one-person-company", "zh")).toBe("一人公司");
+    expect(getCategoryLabel("one-person-company", "en")).toBe(
+      "One-Person Company"
+    );
+    expect(results.some((group) => group.slug === "one-person-company-wechat"))
+      .toBe(true);
+    expect(results.every((group) => group.categorySlug === "one-person-company"))
+      .toBe(true);
+  });
+
   it("standardizes group category data on categorySlug", () => {
     expect(sampleGroups.every((group) => !("category" in group))).toBe(true);
   });

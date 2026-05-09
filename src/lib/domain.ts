@@ -7,6 +7,10 @@ export const categories = [
   { slug: "overseas", label: { zh: "出海", en: "Overseas Business" } },
   { slug: "programming", label: { zh: "编程", en: "Programming" } },
   { slug: "investment", label: { zh: "投资", en: "Investment" } },
+  {
+    slug: "one-person-company",
+    label: { zh: "一人公司", en: "One-Person Company" }
+  },
   { slug: "indie-dev", label: { zh: "独立开发", en: "Indie Development" } }
 ] as const satisfies readonly {
   slug: string;

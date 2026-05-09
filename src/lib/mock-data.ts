@@ -82,7 +82,7 @@ export const sampleGroups: Group[] = [
     slug: "one-person-company-wechat",
     name: "一人公司实践群 / One-Person Company Lab",
     platform: "wechat",
-    categorySlug: "indie-dev",
+    categorySlug: "one-person-company",
     tags: ["一人公司", "One-Person Company", "Solo Founder", "独立开发", "自动化"],
     shortDescription:
       "面向 solo founders、独立开发者和小型自动化业务实践者的中文交流群。",

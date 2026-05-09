@@ -185,7 +185,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     home: {
       title: "发现真实活跃的兴趣群",
       intro:
-        "从 AI、出海、编程、投资和独立开发开始，按平台、主题和新鲜度快速筛选适合自己的社群。",
+        "从 AI、出海、编程、投资、一人公司和独立开发开始，按平台、主题和新鲜度快速筛选适合自己的社群。",
       approvedCount: "个已审核群组",
       categoriesTitle: "按主题浏览",
       allCategories: "全部",
@@ -362,7 +362,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     home: {
       title: "Discover real, active communities",
       intro:
-        "Start with AI, overseas business, programming, investing, and indie development groups. Filter by platform, topic, and freshness.",
+        "Start with AI, overseas business, programming, investing, one-person company, and indie development groups. Filter by platform, topic, and freshness.",
       approvedCount: "approved groups",
       categoriesTitle: "Browse by topic",
       allCategories: "All",
