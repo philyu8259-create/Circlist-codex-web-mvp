@@ -27,6 +27,8 @@ keeping group information fresh enough to trust.
 Core outcomes:
 
 - Visitors can browse, search, and filter approved groups without logging in.
+- Visitors can use the product in Chinese or English, selected automatically
+  from browser language with an in-app language switch.
 - Logged-in users can submit new groups.
 - Logged-in users can claim or manage groups they own.
 - Group details can include joining methods such as QR codes, invite links,
@@ -327,6 +329,7 @@ The first launch should include:
 - Admin review queues
 - Supabase-backed database, auth, and storage
 - Responsive web UI for desktop and mobile
+- Chinese and English adaptive UI copy for public, owner, and admin flows
 
 ## Implementation Defaults
 
@@ -338,8 +341,9 @@ These defaults keep the first implementation focused:
 - Review statuses use simple labels: draft, pending, approved, rejected,
   changes requested, suspended, needs update.
 - Rejection templates start as plain admin-entered text.
-- The public UI is Chinese-first for the MVP, with English-ready slugs and data
-  fields where useful.
+- The UI supports Chinese and English in the MVP. Default language follows the
+  browser when possible, and users can switch languages manually.
+- Group data keeps stable slugs plus localized display fields where useful.
 
 ## Approval Summary
 

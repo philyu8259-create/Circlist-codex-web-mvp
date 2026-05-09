@@ -4,7 +4,7 @@
 
 **Goal:** Build the first Web App MVP for 趣群岛 / Circlist: public group discovery, email login, group submission, owner operations, reports, and admin review queues.
 
-**Architecture:** Use a Next.js App Router application with a small domain layer, Supabase for auth/database/storage, and server actions for mutations. Build a Chinese-first responsive UI with clean public browsing first, then add authenticated owner/admin workflows behind role checks.
+**Architecture:** Use a Next.js App Router application with a small domain layer, Supabase for auth/database/storage, and server actions for mutations. Build a bilingual adaptive responsive UI with clean public browsing first, then add authenticated owner/admin workflows behind role checks.
 
 **Tech Stack:** Next.js, React, TypeScript, Tailwind CSS, Supabase Auth/Postgres/Storage, Vitest, Testing Library, Vercel-ready environment variables.
 
@@ -21,6 +21,7 @@
 - `src/app/layout.tsx`: root layout and metadata.
 - `src/app/globals.css`: base styles and Tailwind layers.
 - `src/app/page.tsx`: public home/search experience.
+- `src/lib/i18n.ts`: Chinese/English dictionaries, browser-language detection, and text helper.
 - `src/app/categories/[slug]/page.tsx`: category listing page.
 - `src/app/groups/[slug]/page.tsx`: public group detail page.
 - `src/app/submit/page.tsx`: login-gated group submission page.
@@ -38,6 +39,14 @@
 - `tests/*`: focused unit tests for domain/search/action helpers.
 - `.env.example`: required Supabase environment variables.
 
+## Global Bilingual Requirement
+
+All user-facing UI copy must support Chinese and English from the first MVP. If
+a task snippet contains hard-coded Chinese text, implement it through
+`src/lib/i18n.ts` instead. The default locale is Chinese, browser language may
+select English, and the UI must expose a small language switch so users can
+change language manually.
+
 ## Task 1: Bootstrap The Next.js App
 
 **Files:**
@@ -50,6 +59,7 @@
 - Create: `src/app/layout.tsx`
 - Create: `src/app/globals.css`
 - Create: `src/app/page.tsx`
+- Create: `src/lib/i18n.ts`
 - Create: `tests/setup.ts`
 
 - [ ] **Step 1: Create package metadata and scripts**
@@ -199,15 +209,63 @@ import "@testing-library/jest-dom/vitest";
 
 - [ ] **Step 4: Add root app shell**
 
+Create `src/lib/i18n.ts`:
+
+```ts
+export type Locale = "zh" | "en";
+
+type Dictionary = {
+  appName: string;
+  subtitle: string;
+  homeEyebrow: string;
+  homeTitle: string;
+  homeIntro: string;
+  searchPlaceholder: string;
+  searchButton: string;
+};
+
+const dictionaries: Record<Locale, Dictionary> = {
+  zh: {
+    appName: "趣群岛 Circlist",
+    subtitle: "发现真实活跃的兴趣群",
+    homeEyebrow: "兴趣群发现平台",
+    homeTitle: "发现真实活跃的兴趣群",
+    homeIntro: "先从 AI、出海、编程、投资和独立开发开始，找到适合自己的微信群、QQ群、Telegram 或 Discord 社群。",
+    searchPlaceholder: "搜索 AI、出海、独立开发...",
+    searchButton: "搜索"
+  },
+  en: {
+    appName: "Circlist",
+    subtitle: "Discover communities by interest",
+    homeEyebrow: "Interest group discovery",
+    homeTitle: "Discover real, active communities",
+    homeIntro: "Start with AI, overseas business, programming, investing, and indie development communities across WeChat, QQ, Telegram, and Discord.",
+    searchPlaceholder: "Search AI, overseas, indie dev...",
+    searchButton: "Search"
+  }
+};
+
+export function normalizeLocale(value: string | undefined | null): Locale {
+  return value?.toLowerCase().startsWith("en") ? "en" : "zh";
+}
+
+export function getDictionary(locale: Locale = "zh") {
+  return dictionaries[locale];
+}
+```
+
 Create `src/app/layout.tsx`:
 
 ```tsx
 import type { Metadata } from "next";
 import "./globals.css";
+import { getDictionary } from "@/lib/i18n";
+
+const copy = getDictionary("zh");
 
 export const metadata: Metadata = {
-  title: "趣群岛 Circlist",
-  description: "发现真实活跃的兴趣群"
+  title: copy.appName,
+  description: copy.subtitle
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
