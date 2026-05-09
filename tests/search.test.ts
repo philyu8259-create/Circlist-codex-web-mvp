@@ -103,6 +103,34 @@ describe("group search", () => {
       .toBe(true);
   });
 
+  it("includes verified real-world public communities as samples", () => {
+    const slugs = sampleGroups.map((group) => group.slug);
+
+    expect(slugs).toContain("langchain-community-slack");
+    expect(slugs).toContain("hugging-face-discord");
+    expect(slugs).toContain("supabase-discord");
+    expect(slugs).toContain("cloudflare-developers-discord");
+    expect(slugs).toContain("opc-community");
+  });
+
+  it("finds real-world samples by official community names", () => {
+    expect(
+      searchGroups(sampleGroups, { query: "LangChain" }).some(
+        (group) => group.slug === "langchain-community-slack"
+      )
+    ).toBe(true);
+    expect(
+      searchGroups(sampleGroups, { query: "Supabase" }).some(
+        (group) => group.slug === "supabase-discord"
+      )
+    ).toBe(true);
+    expect(
+      searchGroups(sampleGroups, { query: "OPC Community" }).some(
+        (group) => group.slug === "opc-community"
+      )
+    ).toBe(true);
+  });
+
   it("standardizes group category data on categorySlug", () => {
     expect(sampleGroups.every((group) => !("category" in group))).toBe(true);
   });

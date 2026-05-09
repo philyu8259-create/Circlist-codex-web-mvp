@@ -78,6 +78,162 @@ export const sampleGroups: Group[] = [
     moderationStatus: "approved"
   },
   {
+    id: "grp_langchain_community_slack",
+    slug: "langchain-community-slack",
+    name: "LangChain Community Slack",
+    platform: "slack",
+    categorySlug: "ai",
+    tags: ["LangChain", "LangGraph", "AI Agents", "LLM", "GenAI"],
+    shortDescription:
+      "LangChain 官方社区 Slack，面向构建 AI agents 和 LLM 应用的开发者。",
+    description:
+      "An official LangChain Community Slack for developers building with LangChain, LangGraph, agents, and generative AI workflows. The public page describes it as a place for open discussion, events, jobs, and showcasing agents.",
+    suitableAudience: "AI 工程师、agent 开发者、LLM 应用 builders",
+    suitableFor: "AI 工程师、agent 开发者、LLM 应用 builders",
+    language: "English",
+    region: "Global",
+    activityLevel: "high",
+    joinPolicy: "approval_required",
+    price: "free",
+    rulesSummary: "需要遵守社区行为准则，禁止无关招揽和刷屏推广。",
+    ownerVerified: true,
+    lastVerifiedAt: "2026-05-09",
+    trustSignals: [
+      "recently_verified",
+      "owner_maintained",
+      "join_method_fresh"
+    ],
+    joinMethods: [
+      {
+        id: "jm_langchain_slack_form",
+        type: "application_form",
+        label: "Official Slack application",
+        value: "https://www.langchain.com/join-community",
+        visibility: "public",
+        lastVerifiedAt: "2026-05-09",
+        reviewStatus: "approved"
+      }
+    ],
+    moderationStatus: "approved"
+  },
+  {
+    id: "grp_hugging_face_discord",
+    slug: "hugging-face-discord",
+    name: "Hugging Face Discord Community",
+    platform: "discord",
+    categorySlug: "ai",
+    tags: ["Hugging Face", "Machine Learning", "AI", "Open Source", "Models"],
+    shortDescription:
+      "Hugging Face 官方 Discord 社区，聚焦机器学习、开源模型和 AI 实践。",
+    description:
+      "The official Hugging Face Discord Community for AI and ML builders, learners, and open source contributors. Members join through Hugging Face verification before entering Discord.",
+    suitableAudience: "ML 工程师、AI 研究/应用开发者、开源模型用户",
+    suitableFor: "ML 工程师、AI 研究/应用开发者、开源模型用户",
+    language: "English / Global",
+    region: "Global",
+    activityLevel: "high",
+    joinPolicy: "approval_required",
+    price: "free",
+    rulesSummary: "按 Hugging Face Discord 验证流程加入，遵守社区规则。",
+    ownerVerified: true,
+    lastVerifiedAt: "2026-05-09",
+    trustSignals: [
+      "recently_verified",
+      "owner_maintained",
+      "join_method_fresh"
+    ],
+    joinMethods: [
+      {
+        id: "jm_hugging_face_discord_invite",
+        type: "invite_link",
+        label: "Official Discord invite",
+        value: "https://hf.co/join/discord",
+        visibility: "public",
+        lastVerifiedAt: "2026-05-09",
+        reviewStatus: "approved"
+      }
+    ],
+    moderationStatus: "approved"
+  },
+  {
+    id: "grp_supabase_discord",
+    slug: "supabase-discord",
+    name: "Supabase Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Supabase", "Postgres", "Backend", "Database", "Open Source"],
+    shortDescription:
+      "Supabase 官方 Discord，适合交流 Postgres、Auth、Storage、Edge Functions 等开发问题。",
+    description:
+      "The official Supabase Discord community for developers building with Supabase, Postgres, auth, storage, realtime, and edge functions.",
+    suitableAudience: "Web 开发者、后端工程师、Postgres/Supabase 用户",
+    suitableFor: "Web 开发者、后端工程师、Postgres/Supabase 用户",
+    language: "English / Global",
+    region: "Global",
+    activityLevel: "high",
+    joinPolicy: "open",
+    price: "free",
+    rulesSummary: "适合公开技术交流和社区支持，不要发布敏感项目凭证。",
+    ownerVerified: true,
+    lastVerifiedAt: "2026-05-09",
+    trustSignals: [
+      "recently_verified",
+      "owner_maintained",
+      "join_method_fresh"
+    ],
+    joinMethods: [
+      {
+        id: "jm_supabase_discord_link",
+        type: "invite_link",
+        label: "Official Discord invite",
+        value: "https://discord.supabase.com",
+        visibility: "public",
+        lastVerifiedAt: "2026-05-09",
+        reviewStatus: "approved"
+      }
+    ],
+    moderationStatus: "approved"
+  },
+  {
+    id: "grp_cloudflare_developers_discord",
+    slug: "cloudflare-developers-discord",
+    name: "Cloudflare Developers Discord",
+    platform: "discord",
+    categorySlug: "programming",
+    tags: ["Cloudflare", "Workers", "Edge", "Serverless", "Developer Platform"],
+    shortDescription:
+      "Cloudflare Developers 官方 Discord，面向 Workers、Pages、AI 和边缘开发者。",
+    description:
+      "Cloudflare's developer community Discord for sharing ideas, answers, code, and notes around the Cloudflare Developer Platform, Workers, Pages, AI, and edge infrastructure.",
+    suitableAudience: "前后端开发者、边缘计算开发者、Cloudflare Workers 用户",
+    suitableFor: "前后端开发者、边缘计算开发者、Cloudflare Workers 用户",
+    language: "English / Global",
+    region: "Global",
+    activityLevel: "high",
+    joinPolicy: "open",
+    price: "free",
+    rulesSummary: "遵守官方社区规则，技术问题请尽量公开提问并提供上下文。",
+    ownerVerified: true,
+    lastVerifiedAt: "2026-05-09",
+    trustSignals: [
+      "recently_verified",
+      "owner_maintained",
+      "join_method_fresh"
+    ],
+    joinMethods: [
+      {
+        id: "jm_cloudflare_developers_discord_link",
+        type: "invite_link",
+        label: "Official Discord invite",
+        value: "https://discord.cloudflare.com",
+        visibility: "public",
+        lastVerifiedAt: "2026-05-09",
+        reviewStatus: "approved"
+      }
+    ],
+    moderationStatus: "approved"
+  },
+  {
     id: "grp_one_person_company_wechat",
     slug: "one-person-company-wechat",
     name: "一人公司实践群 / One-Person Company Lab",
@@ -105,6 +261,41 @@ export const sampleGroups: Group[] = [
         type: "admin_contact",
         label: "联系管理员入群",
         value: "提交你的项目方向或正在实践的一人公司主题后审核",
+        visibility: "public",
+        lastVerifiedAt: "2026-05-09",
+        reviewStatus: "approved"
+      }
+    ],
+    moderationStatus: "approved"
+  },
+  {
+    id: "grp_opc_community",
+    slug: "opc-community",
+    name: "OPC Community",
+    platform: "other",
+    categorySlug: "one-person-company",
+    tags: ["OPC", "One-Person Company", "Solo Founder", "AI", "Indie Hacker"],
+    shortDescription:
+      "面向 AI 时代一人公司和 solo founders 的公开社区与会员网络。",
+    description:
+      "OPC Community is a real community for one-person companies and solo founders who want peer connection, curated resources, events, and AI-era operating playbooks.",
+    suitableAudience: "一人公司创始人、solo founders、AI builders、indie hackers",
+    suitableFor: "一人公司创始人、solo founders、AI builders、indie hackers",
+    language: "English / Global",
+    region: "Global",
+    activityLevel: "medium",
+    joinPolicy: "approval_required",
+    price: "unknown",
+    rulesSummary: "强调高信任、高信号连接，适合认真建设一人公司的人。",
+    ownerVerified: true,
+    lastVerifiedAt: "2026-05-09",
+    trustSignals: ["recently_verified", "join_method_fresh"],
+    joinMethods: [
+      {
+        id: "jm_opc_community_signup",
+        type: "application_form",
+        label: "Official community sign up",
+        value: "https://www.opc.community/",
         visibility: "public",
         lastVerifiedAt: "2026-05-09",
         reviewStatus: "approved"
