@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
+import { claimGroup } from "@/lib/actions/groups";
+import { reportGroup } from "@/lib/actions/reports";
 import { getCategoryLabel, getPlatformLabel } from "@/lib/domain";
 import { getDictionary, normalizeLocale } from "@/lib/i18n";
 import { sampleGroups } from "@/lib/mock-data";
@@ -27,6 +29,8 @@ export default async function GroupDetailPage({
     searchParams
   ]);
   const locale = normalizeLocale(firstParam(resolvedSearchParams?.lang));
+  const reportState = firstParam(resolvedSearchParams?.report);
+  const claimState = firstParam(resolvedSearchParams?.claim);
   const copy = getDictionary(locale);
   const group = sampleGroups.find(
     (item) => item.slug === slug && item.moderationStatus === "approved"
@@ -186,6 +190,89 @@ export default async function GroupDetailPage({
           <p className="mt-3 text-sm leading-7 text-ink/70">
             {group.rulesSummary}
           </p>
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-2">
+          <form
+            action={claimGroup}
+            className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
+          >
+            <input name="lang" type="hidden" value={locale} />
+            <input name="groupId" type="hidden" value={group.id} />
+            <input name="slug" type="hidden" value={group.slug} />
+            <h2 className="text-lg font-semibold text-ink">
+              {copy.detail.claimTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-ink/65">
+              {copy.detail.claimIntro}
+            </p>
+            {claimState === "sent" ? (
+              <p className="mt-3 rounded-md bg-leaf/10 px-3 py-2 text-sm font-medium text-leaf">
+                {copy.detail.claimSent}
+              </p>
+            ) : null}
+            <label className="mt-4 grid gap-2 text-sm font-medium text-ink">
+              {copy.detail.claimEvidence}
+              <textarea
+                className="min-h-24 rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf"
+                name="evidence"
+                required
+              />
+            </label>
+            <button
+              className="mt-4 rounded-md bg-leaf px-4 py-2 text-sm font-semibold text-white transition hover:bg-coral"
+              type="submit"
+            >
+              {copy.detail.claimButton}
+            </button>
+          </form>
+
+          <form
+            action={reportGroup}
+            className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
+          >
+            <input name="lang" type="hidden" value={locale} />
+            <input name="groupId" type="hidden" value={group.id} />
+            <input name="slug" type="hidden" value={group.slug} />
+            <h2 className="text-lg font-semibold text-ink">
+              {copy.detail.reportTitle}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-ink/65">
+              {copy.detail.reportIntro}
+            </p>
+            {reportState === "sent" ? (
+              <p className="mt-3 rounded-md bg-leaf/10 px-3 py-2 text-sm font-medium text-leaf">
+                {copy.detail.reportSent}
+              </p>
+            ) : null}
+            <label className="mt-4 grid gap-2 text-sm font-medium text-ink">
+              {copy.detail.reportType}
+              <select
+                className="rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf"
+                name="reportType"
+              >
+                <option value="invalid_join_method">Invalid join method</option>
+                <option value="outdated_info">Outdated information</option>
+                <option value="spam">Spam</option>
+                <option value="scam">Scam</option>
+                <option value="abuse">Abuse</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label className="mt-4 grid gap-2 text-sm font-medium text-ink">
+              {copy.detail.reportMessage}
+              <textarea
+                className="min-h-24 rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf"
+                name="message"
+              />
+            </label>
+            <button
+              className="mt-4 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white transition hover:bg-coral"
+              type="submit"
+            >
+              {copy.detail.reportButton}
+            </button>
+          </form>
         </section>
       </main>
     </>

@@ -6,6 +6,7 @@ type Dictionary = {
   nav: {
     browse: string;
     submit: string;
+    myGroups: string;
     languageLabel: string;
     chinese: string;
     english: string;
@@ -37,8 +38,47 @@ type Dictionary = {
     ownerStatus: string;
     trustSignals: string;
     noJoinMethods: string;
+    claimTitle: string;
+    claimIntro: string;
+    claimEvidence: string;
+    claimButton: string;
+    reportTitle: string;
+    reportIntro: string;
+    reportType: string;
+    reportMessage: string;
+    reportButton: string;
+    reportSent: string;
+    claimSent: string;
     notFoundTitle: string;
     notFoundDescription: string;
+  };
+  submit: {
+    title: string;
+    intro: string;
+    name: string;
+    platform: string;
+    category: string;
+    shortDescription: string;
+    description: string;
+    joinMethodType: string;
+    joinMethodValue: string;
+    language: string;
+    region: string;
+    rulesSummary: string;
+    button: string;
+    validationError: string;
+    submitError: string;
+  };
+  myGroups: {
+    title: string;
+    intro: string;
+    submitted: string;
+    owned: string;
+    pending: string;
+    needsUpdate: string;
+    emptyTitle: string;
+    emptyDescription: string;
+    submittedSuccess: string;
   };
   search: {
     label: string;
@@ -97,6 +137,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     nav: {
       browse: "浏览群组",
       submit: "提交群组",
+      myGroups: "我的群组",
       languageLabel: "语言",
       chinese: "中文",
       english: "English"
@@ -129,8 +170,47 @@ const dictionaries: Record<Locale, Dictionary> = {
       ownerStatus: "群主状态",
       trustSignals: "可信信号",
       noJoinMethods: "暂无可公开展示的已审核加入方式。",
+      claimTitle: "认领这个群组",
+      claimIntro: "如果你是群主或管理员，可以提交证明，审核后会开放维护权限。",
+      claimEvidence: "认领证明",
+      claimButton: "提交认领",
+      reportTitle: "反馈问题",
+      reportIntro: "加入方式失效、信息过期或发现风险时，可以提交给审核队列。",
+      reportType: "问题类型",
+      reportMessage: "补充说明",
+      reportButton: "提交反馈",
+      reportSent: "反馈已提交，等待审核。",
+      claimSent: "认领申请已提交，等待审核。",
       notFoundTitle: "没有找到这个群组",
       notFoundDescription: "它可能尚未通过审核，或链接已经失效。"
+    },
+    submit: {
+      title: "提交新的兴趣群",
+      intro: "提交后会进入人工审核队列。审核通过前不会公开展示。",
+      name: "群组名称",
+      platform: "平台",
+      category: "主题",
+      shortDescription: "一句话简介",
+      description: "详细介绍",
+      joinMethodType: "加入方式类型",
+      joinMethodValue: "加入方式内容",
+      language: "语言",
+      region: "地区",
+      rulesSummary: "群规摘要",
+      button: "提交审核",
+      validationError: "请补全必填项后再提交。",
+      submitError: "提交失败，请稍后重试。"
+    },
+    myGroups: {
+      title: "我的群组",
+      intro: "查看你提交、认领和需要更新的群组状态。实时列表会在后续版本接入。",
+      submitted: "已提交",
+      owned: "已认领",
+      pending: "审核中",
+      needsUpdate: "需要更新",
+      emptyTitle: "暂时没有可展示的群组记录",
+      emptyDescription: "你提交或认领的群组会出现在这里。",
+      submittedSuccess: "群组已提交，当前状态为审核中。"
     },
     search: {
       label: "搜索兴趣群",
@@ -196,6 +276,7 @@ const dictionaries: Record<Locale, Dictionary> = {
     nav: {
       browse: "Browse groups",
       submit: "Submit group",
+      myGroups: "My groups",
       languageLabel: "Language",
       chinese: "中文",
       english: "English"
@@ -228,9 +309,52 @@ const dictionaries: Record<Locale, Dictionary> = {
       ownerStatus: "Owner status",
       trustSignals: "Trust signals",
       noJoinMethods: "No approved public join methods are available yet.",
+      claimTitle: "Claim this group",
+      claimIntro:
+        "If you are the owner or admin, submit evidence for moderator review.",
+      claimEvidence: "Claim evidence",
+      claimButton: "Submit claim",
+      reportTitle: "Report an issue",
+      reportIntro:
+        "Send expired join methods, outdated details, or safety concerns to review.",
+      reportType: "Issue type",
+      reportMessage: "Message",
+      reportButton: "Submit report",
+      reportSent: "Report submitted for review.",
+      claimSent: "Claim submitted for review.",
       notFoundTitle: "Group not found",
       notFoundDescription:
         "It may not be approved for public listing, or the link may be outdated."
+    },
+    submit: {
+      title: "Submit a community",
+      intro:
+        "Submissions go to manual review and stay private until approved.",
+      name: "Group name",
+      platform: "Platform",
+      category: "Category",
+      shortDescription: "Short description",
+      description: "Description",
+      joinMethodType: "Join method type",
+      joinMethodValue: "Join method value",
+      language: "Language",
+      region: "Region",
+      rulesSummary: "Rules summary",
+      button: "Submit for review",
+      validationError: "Please complete the required fields before submitting.",
+      submitError: "Submission failed. Please try again later."
+    },
+    myGroups: {
+      title: "My groups",
+      intro:
+        "Track submitted, claimed, pending, and needs-update groups. Live lists can be connected later.",
+      submitted: "Submitted",
+      owned: "Owned",
+      pending: "Pending",
+      needsUpdate: "Needs update",
+      emptyTitle: "No group records yet",
+      emptyDescription: "Groups you submit or claim will appear here.",
+      submittedSuccess: "Group submitted and pending review."
     },
     search: {
       label: "Search groups",
