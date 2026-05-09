@@ -34,12 +34,6 @@ export function AppHeader({
           >
             {copy.nav.browse}
           </Link>
-          <Link
-            className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
-            href={`/submit${langQuery}`}
-          >
-            {copy.nav.submit}
-          </Link>
           <LanguageSwitch locale={locale} pathname={pathname} query={query} />
         </div>
       </div>

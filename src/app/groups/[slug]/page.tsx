@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { getCategoryLabel, getPlatformLabel } from "@/lib/domain";
@@ -32,25 +33,7 @@ export default async function GroupDetailPage({
   );
 
   if (!group) {
-    return (
-      <>
-        <AppHeader locale={locale} pathname={`/groups/${slug}`} />
-        <main className="mx-auto flex min-h-screen max-w-3xl flex-col px-5 py-14">
-          <Link
-            className="text-sm font-semibold text-leaf transition hover:text-coral"
-            href={`/?lang=${locale}`}
-          >
-            {copy.detail.backToBrowse}
-          </Link>
-          <h1 className="mt-6 text-3xl font-semibold text-ink">
-            {copy.detail.notFoundTitle}
-          </h1>
-          <p className="mt-3 text-base leading-7 text-ink/65">
-            {copy.detail.notFoundDescription}
-          </p>
-        </main>
-      </>
-    );
+    notFound();
   }
 
   const approvedJoinMethods = group.joinMethods.filter(

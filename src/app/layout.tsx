@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 
-import { getDictionary } from "@/lib/i18n";
+import { getDictionary, normalizeLocale } from "@/lib/i18n";
 import "./globals.css";
 
 const copy = getDictionary("zh");
@@ -11,9 +12,15 @@ export const metadata: Metadata = {
   description: copy.subtitle
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children
+}: {
+  children: ReactNode;
+}) {
+  const locale = normalizeLocale((await headers()).get("x-circlist-locale"));
+
   return (
-    <html lang="zh-CN">
+    <html lang={locale === "en" ? "en" : "zh-CN"}>
       <body>{children}</body>
     </html>
   );
