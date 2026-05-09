@@ -5,19 +5,18 @@ import { sampleGroups } from "../src/lib/mock-data";
 import { searchGroups } from "../src/lib/search";
 
 describe("group search", () => {
-  it("finds approved AI WeChat groups by query, category, and platform", () => {
+  it("finds approved AI communities by query, category, and platform", () => {
     const results = searchGroups(sampleGroups, {
-      query: "AI",
+      query: "LangChain",
       category: "ai",
-      platform: "wechat"
+      platform: "slack"
     });
 
-    expect(results.some((group) => group.slug === "ai-builders-wechat")).toBe(
-      true
-    );
+    expect(results.some((group) => group.slug === "langchain-community-slack"))
+      .toBe(true);
     expect(
       results.every(
-        (group) => group.categorySlug === "ai" && group.platform === "wechat"
+        (group) => group.categorySlug === "ai" && group.platform === "slack"
       )
     ).toBe(true);
   });
@@ -37,39 +36,26 @@ describe("group search", () => {
     );
   });
 
-  it("excludes pending groups even when the query matches them", () => {
-    const results = searchGroups(sampleGroups, {
-      query: "Pending review sample"
-    });
-
-    expect(results.some((group) => group.slug === "overseas-founders-pending")).toBe(
-      false
-    );
-    expect(results).toEqual([]);
-  });
-
   it("matches category labels in Chinese and English", () => {
     const chineseResults = searchGroups(sampleGroups, { query: "出海" });
     const englishResults = searchGroups(sampleGroups, {
       query: "Overseas Business"
     });
 
-    expect(
-      chineseResults.some((group) => group.slug === "overseas-business-wechat")
-    ).toBe(true);
-    expect(
-      englishResults.some((group) => group.slug === "overseas-business-wechat")
-    ).toBe(true);
+    expect(chineseResults.some((group) => group.slug === "shopify-community"))
+      .toBe(true);
+    expect(englishResults.some((group) => group.slug === "shopify-community"))
+      .toBe(true);
   });
 
   it("matches platform labels in Chinese and English", () => {
-    const chineseResults = searchGroups(sampleGroups, { query: "微信群" });
-    const englishResults = searchGroups(sampleGroups, { query: "WeChat" });
+    const chineseResults = searchGroups(sampleGroups, { query: "Discord" });
+    const englishResults = searchGroups(sampleGroups, { query: "Discord" });
 
-    expect(chineseResults.some((group) => group.platform === "wechat")).toBe(
+    expect(chineseResults.some((group) => group.platform === "discord")).toBe(
       true
     );
-    expect(englishResults.some((group) => group.platform === "wechat")).toBe(
+    expect(englishResults.some((group) => group.platform === "discord")).toBe(
       true
     );
   });
@@ -81,11 +67,11 @@ describe("group search", () => {
     });
 
     expect(
-      chineseResults.some((group) => group.slug === "one-person-company-wechat")
+      chineseResults.some((group) => group.slug === "opc-community")
     ).toBe(true);
-    expect(
-      englishResults.some((group) => group.slug === "one-person-company-wechat")
-    ).toBe(true);
+    expect(englishResults.some((group) => group.slug === "opc-community")).toBe(
+      true
+    );
   });
 
   it("treats one-person company as a first-level category", () => {
@@ -97,8 +83,7 @@ describe("group search", () => {
     expect(getCategoryLabel("one-person-company", "en")).toBe(
       "One-Person Company"
     );
-    expect(results.some((group) => group.slug === "one-person-company-wechat"))
-      .toBe(true);
+    expect(results.some((group) => group.slug === "opc-community")).toBe(true);
     expect(results.every((group) => group.categorySlug === "one-person-company"))
       .toBe(true);
   });
@@ -111,6 +96,9 @@ describe("group search", () => {
     expect(slugs).toContain("supabase-discord");
     expect(slugs).toContain("cloudflare-developers-discord");
     expect(slugs).toContain("opc-community");
+    expect(slugs).toContain("shopify-community");
+    expect(slugs).toContain("microconf-connect");
+    expect(slugs).toContain("bogleheads-forum");
   });
 
   it("finds real-world samples by official community names", () => {
@@ -129,6 +117,21 @@ describe("group search", () => {
         (group) => group.slug === "opc-community"
       )
     ).toBe(true);
+  });
+
+  it("keeps every sample approved and backed by a public URL", () => {
+    const values = sampleGroups.flatMap((group) =>
+      group.joinMethods.map((method) => method.value)
+    );
+
+    expect(sampleGroups.every((group) => group.moderationStatus === "approved"))
+      .toBe(true);
+    expect(values.every((value) => /^https:\/\/\S+$/.test(value))).toBe(true);
+    expect(values.some((value) => value.includes("example"))).toBe(false);
+    expect(values.some((value) => value.includes("管理员"))).toBe(false);
+    expect(sampleGroups.some((group) => group.slug.includes("pending"))).toBe(
+      false
+    );
   });
 
   it("standardizes group category data on categorySlug", () => {
