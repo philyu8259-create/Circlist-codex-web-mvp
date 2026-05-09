@@ -7,6 +7,7 @@ type Dictionary = {
     browse: string;
     submit: string;
     myGroups: string;
+    admin: string;
     languageLabel: string;
     chinese: string;
     english: string;
@@ -80,6 +81,26 @@ type Dictionary = {
     emptyDescription: string;
     submittedSuccess: string;
   };
+  admin: {
+    title: string;
+    intro: string;
+    accessRequired: string;
+    liveUnavailable: string;
+    emptyQueue: string;
+    submissionsTitle: string;
+    submissionsDescription: string;
+    claimsTitle: string;
+    claimsDescription: string;
+    reportsTitle: string;
+    reportsDescription: string;
+    statusLabel: string;
+    reviewerNotes: string;
+    approve: string;
+    reject: string;
+    requestChanges: string;
+    reviewed: string;
+    reviewFailed: string;
+  };
   search: {
     label: string;
     placeholder: string;
@@ -138,6 +159,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       browse: "浏览群组",
       submit: "提交群组",
       myGroups: "我的群组",
+      admin: "审核后台",
       languageLabel: "语言",
       chinese: "中文",
       english: "English"
@@ -212,6 +234,26 @@ const dictionaries: Record<Locale, Dictionary> = {
       emptyDescription: "你提交或认领的群组会出现在这里。",
       submittedSuccess: "群组已提交，当前状态为审核中。"
     },
+    admin: {
+      title: "审核队列",
+      intro: "集中处理新群提交、群主认领和加入方式问题反馈。",
+      accessRequired: "需要管理员账号登录后才能读取实时队列。",
+      liveUnavailable: "实时队列暂时不可用，当前显示为空队列。",
+      emptyQueue: "当前没有待处理项目。",
+      submissionsTitle: "新群提交",
+      submissionsDescription: "审核用户提交的新兴趣群和加入方式。",
+      claimsTitle: "群主认领",
+      claimsDescription: "核对认领证明，决定是否开放维护权限。",
+      reportsTitle: "问题反馈",
+      reportsDescription: "处理加入方式失效、过期信息和风险举报。",
+      statusLabel: "状态",
+      reviewerNotes: "审核备注",
+      approve: "通过",
+      reject: "拒绝",
+      requestChanges: "要求修改",
+      reviewed: "审核状态已更新。",
+      reviewFailed: "审核更新失败，请稍后重试。"
+    },
     search: {
       label: "搜索兴趣群",
       placeholder: "搜索 AI、出海、独立开发...",
@@ -277,6 +319,7 @@ const dictionaries: Record<Locale, Dictionary> = {
       browse: "Browse groups",
       submit: "Submit group",
       myGroups: "My groups",
+      admin: "Admin",
       languageLabel: "Language",
       chinese: "中文",
       english: "English"
@@ -355,6 +398,28 @@ const dictionaries: Record<Locale, Dictionary> = {
       emptyTitle: "No group records yet",
       emptyDescription: "Groups you submit or claim will appear here.",
       submittedSuccess: "Group submitted and pending review."
+    },
+    admin: {
+      title: "Review queues",
+      intro:
+        "Review new community submissions, ownership claims, and invalid join feedback.",
+      accessRequired: "Sign in with an admin account to load live queues.",
+      liveUnavailable: "Live queues are unavailable, so empty queues are shown.",
+      emptyQueue: "No pending items.",
+      submissionsTitle: "New submissions",
+      submissionsDescription: "Review newly submitted communities and join paths.",
+      claimsTitle: "Ownership claims",
+      claimsDescription: "Check claim evidence before granting maintainer access.",
+      reportsTitle: "Reports and invalid joins",
+      reportsDescription:
+        "Handle expired join methods, outdated details, and safety reports.",
+      statusLabel: "Status",
+      reviewerNotes: "Reviewer notes",
+      approve: "Approve",
+      reject: "Reject",
+      requestChanges: "Request changes",
+      reviewed: "Review status updated.",
+      reviewFailed: "Review update failed. Please try again later."
     },
     search: {
       label: "Search groups",
