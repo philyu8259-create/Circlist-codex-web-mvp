@@ -132,6 +132,8 @@ type Dictionary = {
     sendLink: string;
     checkEmail: string;
     error: string;
+    networkError: string;
+    rateLimited: string;
     required: string;
   };
   search: {
@@ -343,6 +345,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       sendLink: "发送登录链接",
       checkEmail: "登录链接已发送，请查看邮箱。",
       error: "登录链接发送失败，请稍后重试。",
+      networkError: "连接 Supabase 超时，请检查网络后再试一次。",
+      rateLimited: "登录邮件发送太频繁，请稍等一会儿再试。",
       required: "请先登录后继续。"
     },
     search: {
@@ -576,6 +580,8 @@ const dictionaries: Record<Locale, Dictionary> = {
       sendLink: "Send sign-in link",
       checkEmail: "Sign-in link sent. Check your email.",
       error: "Could not send the sign-in link. Please try again.",
+      networkError: "Connection to Supabase timed out. Check the network and try again.",
+      rateLimited: "Too many sign-in emails were requested. Please wait and try again.",
       required: "Please sign in to continue."
     },
     search: {

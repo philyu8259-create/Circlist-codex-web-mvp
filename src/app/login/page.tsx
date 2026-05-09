@@ -51,6 +51,16 @@ export default async function LoginPage({
             {copy.auth.error}
           </p>
         ) : null}
+        {authState === "network" ? (
+          <p className="rounded-lg border border-coral/25 bg-coral/10 px-4 py-3 text-sm font-medium text-coral">
+            {copy.auth.networkError}
+          </p>
+        ) : null}
+        {authState === "rate_limited" ? (
+          <p className="rounded-lg border border-coral/25 bg-coral/10 px-4 py-3 text-sm font-medium text-coral">
+            {copy.auth.rateLimited}
+          </p>
+        ) : null}
 
         <form
           action={sendMagicLink}
