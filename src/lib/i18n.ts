@@ -11,6 +11,8 @@ type Dictionary = {
     languageLabel: string;
     chinese: string;
     english: string;
+    signIn: string;
+    signOut: string;
   };
   home: {
     title: string;
@@ -118,6 +120,15 @@ type Dictionary = {
     reviewed: string;
     reviewFailed: string;
   };
+  auth: {
+    title: string;
+    intro: string;
+    email: string;
+    sendLink: string;
+    checkEmail: string;
+    error: string;
+    required: string;
+  };
   search: {
     label: string;
     placeholder: string;
@@ -203,7 +214,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       admin: "审核后台",
       languageLabel: "语言",
       chinese: "中文",
-      english: "English"
+      english: "English",
+      signIn: "登录",
+      signOut: "退出"
     },
     home: {
       title: "发现真实活跃的兴趣群",
@@ -313,6 +326,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       reviewed: "审核状态已更新。",
       reviewFailed: "审核更新失败，请稍后重试。"
     },
+    auth: {
+      title: "登录 Circlist",
+      intro: "输入邮箱后会收到登录链接。登录后可以提交群组、查看自己的提交和进入管理员后台。",
+      email: "邮箱",
+      sendLink: "发送登录链接",
+      checkEmail: "登录链接已发送，请查看邮箱。",
+      error: "登录链接发送失败，请稍后重试。",
+      required: "请先登录后继续。"
+    },
     search: {
       label: "搜索兴趣群",
       placeholder: "搜索 AI、出海、独立开发...",
@@ -408,7 +430,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       admin: "Admin",
       languageLabel: "Language",
       chinese: "中文",
-      english: "English"
+      english: "English",
+      signIn: "Sign in",
+      signOut: "Sign out"
     },
     home: {
       title: "Discover real, active communities",
@@ -527,6 +551,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       requestChanges: "Request changes",
       reviewed: "Review status updated.",
       reviewFailed: "Review update failed. Please try again later."
+    },
+    auth: {
+      title: "Sign in to Circlist",
+      intro:
+        "Enter your email and we will send a magic link. After signing in, you can submit groups, track your submissions, and access admin review if enabled.",
+      email: "Email",
+      sendLink: "Send sign-in link",
+      checkEmail: "Sign-in link sent. Check your email.",
+      error: "Could not send the sign-in link. Please try again.",
+      required: "Please sign in to continue."
     },
     search: {
       label: "Search groups",

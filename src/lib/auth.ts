@@ -34,6 +34,10 @@ function safeNextPath(value: string | undefined): string | null {
   return value;
 }
 
+export function getSafeNextPath(value: string | undefined): string {
+  return safeNextPath(value) ?? "/";
+}
+
 export async function requireUser(options: RequireUserOptions = {}) {
   const user = await getCurrentUser();
 
@@ -45,7 +49,7 @@ export async function requireUser(options: RequireUserOptions = {}) {
     if (lang) params.set("lang", lang);
     if (next) params.set("next", next);
 
-    redirect(`/?${params.toString()}`);
+    redirect(`/login?${params.toString()}`);
   }
 
   return user;

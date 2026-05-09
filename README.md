@@ -41,6 +41,12 @@ npm run seed:samples
 
 The seed command reads `.env.local` and requires `NEXT_PUBLIC_SUPABASE_URL` plus `SUPABASE_SERVICE_ROLE_KEY`. The service role key is only used by the local script and must stay out of browser-exposed environments.
 
+To make a signed-in user an admin, have them sign in once, then run:
+
+```bash
+npm run admin:promote -- user@example.com
+```
+
 ## Bilingual Behavior
 
 Circlist supports Chinese and English in the MVP. Use `?lang=zh` or `?lang=en` on supported routes to select a language directly. The in-app language switch preserves the current path and updates the `lang` query parameter.

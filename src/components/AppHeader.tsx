@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { signOut } from "@/lib/actions/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { LanguageSwitch } from "./LanguageSwitch";
 
@@ -9,13 +11,14 @@ type AppHeaderProps = {
   query?: Record<string, string | undefined>;
 };
 
-export function AppHeader({
+export async function AppHeader({
   locale,
   pathname = "/",
   query = {}
 }: AppHeaderProps) {
   const copy = getDictionary(locale);
   const langQuery = locale === "zh" ? "?lang=zh" : "?lang=en";
+  const user = await getCurrentUser();
 
   return (
     <header className="border-b border-ink/10 bg-paper/95">
@@ -46,6 +49,24 @@ export function AppHeader({
           >
             {copy.nav.myGroups}
           </Link>
+          {user ? (
+            <form action={signOut}>
+              <input name="lang" type="hidden" value={locale} />
+              <button
+                className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
+                type="submit"
+              >
+                {copy.nav.signOut}
+              </button>
+            </form>
+          ) : (
+            <Link
+              className="hidden text-sm font-medium text-ink/70 transition hover:text-leaf sm:inline"
+              href={`/login${langQuery}`}
+            >
+              {copy.nav.signIn}
+            </Link>
+          )}
           <LanguageSwitch locale={locale} pathname={pathname} query={query} />
         </div>
       </div>
