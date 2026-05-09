@@ -198,8 +198,7 @@ export default async function GroupDetailPage({
             className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
           >
             <input name="lang" type="hidden" value={locale} />
-            <input name="groupId" type="hidden" value={group.id} />
-            <input name="slug" type="hidden" value={group.slug} />
+            <input name="groupSlug" type="hidden" value={group.slug} />
             <h2 className="text-lg font-semibold text-ink">
               {copy.detail.claimTitle}
             </h2>
@@ -232,8 +231,14 @@ export default async function GroupDetailPage({
             className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
           >
             <input name="lang" type="hidden" value={locale} />
-            <input name="groupId" type="hidden" value={group.id} />
-            <input name="slug" type="hidden" value={group.slug} />
+            <input name="groupSlug" type="hidden" value={group.slug} />
+            <input
+              autoComplete="off"
+              className="hidden"
+              name="website"
+              tabIndex={-1}
+              type="text"
+            />
             <h2 className="text-lg font-semibold text-ink">
               {copy.detail.reportTitle}
             </h2>

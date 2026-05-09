@@ -23,6 +23,13 @@ type GroupSubmissionInsert =
 type OwnershipClaimInsert =
   Database["public"]["Tables"]["ownership_claims"]["Insert"];
 
+const GROUP_NAME_MIN_LENGTH = 2;
+const GROUP_NAME_MAX_LENGTH = 160;
+const SHORT_DESCRIPTION_MAX_LENGTH = 280;
+const DESCRIPTION_MAX_LENGTH = 2000;
+const EVIDENCE_MAX_LENGTH = 2000;
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 export type GroupSubmissionInput = {
   name?: FormDataEntryValue | null;
   platform?: FormDataEntryValue | null;
@@ -42,6 +49,10 @@ export type ValidationResult =
 
 function text(value: FormDataEntryValue | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function isValidSlug(value: string): boolean {
+  return SLUG_PATTERN.test(value);
 }
 
 function isPlatform(value: string): value is Platform {
@@ -69,10 +80,22 @@ export function validateGroupSubmission(
   const errors: string[] = [];
 
   if (!name) errors.push("Group name is required.");
+  if (
+    name &&
+    (name.length < GROUP_NAME_MIN_LENGTH || name.length > GROUP_NAME_MAX_LENGTH)
+  ) {
+    errors.push("Group name must be between 2 and 160 characters.");
+  }
   if (!platform) errors.push("Platform is required.");
   if (!categorySlug) errors.push("Category is required.");
   if (!shortDescription) errors.push("Short description is required.");
+  if (shortDescription.length > SHORT_DESCRIPTION_MAX_LENGTH) {
+    errors.push("Short description must be 280 characters or fewer.");
+  }
   if (!description) errors.push("Description is required.");
+  if (description.length > DESCRIPTION_MAX_LENGTH) {
+    errors.push("Description must be 2000 characters or fewer.");
+  }
   if (!joinMethodType || !joinMethodValue) {
     errors.push("Join method is required.");
   }
@@ -111,10 +134,10 @@ export async function submitGroup(formData: FormData) {
   "use server";
 
   const { requireUser } = await import("../auth");
-  const user = await requireUser();
   const input = submissionInputFromFormData(formData);
   const validation = validateGroupSubmission(input);
   const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
+  const user = await requireUser({ lang: locale, next: "/submit" });
 
   if (!validation.ok) {
     redirect(`/submit?lang=${locale}&error=validation`);
@@ -175,20 +198,40 @@ export async function claimGroup(formData: FormData) {
   "use server";
 
   const { requireUser } = await import("../auth");
-  const user = await requireUser();
-  const groupId = text(formData.get("groupId"));
-  const evidence = text(formData.get("evidence"));
   const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
-  const slug = text(formData.get("slug"));
+  const slug = text(formData.get("groupSlug"));
+  const user = await requireUser({
+    lang: locale,
+    next: slug && isValidSlug(slug) ? `/groups/${slug}` : "/"
+  });
+  const evidence = text(formData.get("evidence"));
+  const returnPath = slug && isValidSlug(slug) ? `/groups/${slug}` : "/";
 
-  if (!groupId || !evidence) {
-    redirect(`${slug ? `/groups/${slug}` : "/"}?lang=${locale}&claim=missing`);
+  if (!slug || !isValidSlug(slug) || !evidence) {
+    redirect(`${returnPath}?lang=${locale}&claim=missing`);
+  }
+
+  if (evidence.length > EVIDENCE_MAX_LENGTH) {
+    redirect(`${returnPath}?lang=${locale}&claim=validation`);
   }
 
   const { createClient } = await import("../supabase/server");
   const supabase = await createClient();
+
+  const { data: groupData, error: groupError } = await supabase
+    .from("groups")
+    .select("id")
+    .eq("slug", slug)
+    .eq("moderation_status", "approved")
+    .maybeSingle();
+  const group = groupData as { id: string } | null;
+
+  if (groupError || !group) {
+    redirect(`${returnPath}?lang=${locale}&claim=not_found`);
+  }
+
   const claim: OwnershipClaimInsert = {
-    group_id: groupId,
+    group_id: group.id,
     claimant_id: user.id,
     evidence,
     claim_status: "pending",
@@ -200,8 +243,8 @@ export async function claimGroup(formData: FormData) {
     .insert(claim as never);
 
   if (error) {
-    redirect(`${slug ? `/groups/${slug}` : "/"}?lang=${locale}&claim=error`);
+    redirect(`${returnPath}?lang=${locale}&claim=error`);
   }
 
-  redirect(`${slug ? `/groups/${slug}` : "/my-groups"}?lang=${locale}&claim=sent`);
+  redirect(`${returnPath}?lang=${locale}&claim=sent`);
 }

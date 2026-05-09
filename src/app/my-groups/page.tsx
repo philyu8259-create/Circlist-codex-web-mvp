@@ -20,7 +20,7 @@ export default async function MyGroupsPage({
   const submitted = firstParam(params?.submitted);
   const copy = getDictionary(locale);
 
-  await requireUser();
+  await requireUser({ lang: locale, next: "/my-groups" });
 
   const stats = [
     { label: copy.myGroups.submitted, value: "0" },
