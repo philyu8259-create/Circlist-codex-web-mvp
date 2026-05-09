@@ -81,7 +81,6 @@ export type Group = {
   slug: string;
   name: string;
   platform: Platform;
-  category: CategorySlug;
   categorySlug: CategorySlug;
   tags: string[];
   shortDescription: string;

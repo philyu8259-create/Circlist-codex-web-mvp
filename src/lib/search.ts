@@ -1,4 +1,10 @@
-import type { CategorySlug, Group, Platform } from "@/lib/domain";
+import {
+  getCategoryLabel,
+  getPlatformLabel,
+  type CategorySlug,
+  type Group,
+  type Platform
+} from "./domain";
 
 export type GroupSearchFilters = {
   query?: string;
@@ -21,7 +27,7 @@ export function searchGroups(
     if (
       filters.category &&
       filters.category !== "all" &&
-      group.category !== filters.category
+      group.categorySlug !== filters.category
     ) {
       return false;
     }
@@ -40,6 +46,10 @@ export function searchGroups(
 
     const haystack = [
       group.name,
+      getCategoryLabel(group.categorySlug, "zh"),
+      getCategoryLabel(group.categorySlug, "en"),
+      getPlatformLabel(group.platform, "zh"),
+      getPlatformLabel(group.platform, "en"),
       group.shortDescription,
       group.description,
       group.suitableAudience,

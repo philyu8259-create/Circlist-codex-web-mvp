@@ -6,7 +6,6 @@ export const sampleGroups: Group[] = [
     slug: "ai-builders-wechat",
     name: "AI Builders WeChat / AI 产品共创群",
     platform: "wechat",
-    category: "ai",
     categorySlug: "ai",
     tags: ["AI", "AI 产品", "LLM", "工具", "独立开发"],
     shortDescription:
@@ -48,7 +47,6 @@ export const sampleGroups: Group[] = [
     slug: "indie-dev-discord",
     name: "Indie Dev Launch Room / 独立开发出海社区",
     platform: "discord",
-    category: "indie-dev",
     categorySlug: "indie-dev",
     tags: ["Indie Dev", "SaaS", "Launch", "独立开发", "出海"],
     shortDescription:
@@ -80,11 +78,44 @@ export const sampleGroups: Group[] = [
     moderationStatus: "approved"
   },
   {
+    id: "grp_overseas_business_wechat",
+    slug: "overseas-business-wechat",
+    name: "Overseas Business Dock / 出海业务码头",
+    platform: "wechat",
+    categorySlug: "overseas",
+    tags: ["出海", "Overseas Business", "Cross-border", "Go-to-market"],
+    shortDescription: "面向出海产品、跨境业务和海外增长的一线交流群。",
+    description:
+      "A WeChat community for founders and operators discussing overseas business setup, localization, payment, distribution, and compliance basics.",
+    suitableAudience: "出海创业者、跨境业务负责人、海外增长团队",
+    suitableFor: "出海创业者、跨境业务负责人、海外增长团队",
+    language: "中文 / English",
+    region: "China / Global",
+    activityLevel: "medium",
+    joinPolicy: "approval_required",
+    price: "free",
+    rulesSummary: "禁止无关广告、资金盘和虚假服务推广。",
+    ownerVerified: true,
+    lastVerifiedAt: "2026-05-07",
+    trustSignals: ["recently_verified", "owner_maintained"],
+    joinMethods: [
+      {
+        id: "jm_overseas_wechat_admin",
+        type: "admin_contact",
+        label: "联系管理员审核入群",
+        value: "提交业务背景后由管理员邀请",
+        visibility: "public",
+        lastVerifiedAt: "2026-05-07",
+        reviewStatus: "approved"
+      }
+    ],
+    moderationStatus: "approved"
+  },
+  {
     id: "grp_overseas_pending",
     slug: "overseas-founders-pending",
     name: "出海创始人内测群",
     platform: "telegram",
-    category: "overseas",
     categorySlug: "overseas",
     tags: ["出海", "Overseas", "Founders"],
     shortDescription: "等待审核的出海业务交流群。",
