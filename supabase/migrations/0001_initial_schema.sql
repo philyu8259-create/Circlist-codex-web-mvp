@@ -165,19 +165,6 @@ create policy "Users can read own profile"
   to authenticated
   using ((select auth.uid()) = id);
 
-create policy "Users can insert own profile"
-  on public.profiles
-  for insert
-  to authenticated
-  with check ((select auth.uid()) = id);
-
-create policy "Users can update own profile"
-  on public.profiles
-  for update
-  to authenticated
-  using ((select auth.uid()) = id)
-  with check ((select auth.uid()) = id);
-
 create policy "Public can read approved groups"
   on public.groups
   for select
@@ -201,7 +188,11 @@ create policy "Users can insert own group submissions"
   on public.group_submissions
   for insert
   to authenticated
-  with check ((select auth.uid()) = submitter_id);
+  with check (
+    (select auth.uid()) = submitter_id
+    and moderation_status = 'pending'
+    and moderator_notes is null
+  );
 
 create policy "Users can read own group submissions"
   on public.group_submissions
@@ -213,7 +204,11 @@ create policy "Users can insert own ownership claims"
   on public.ownership_claims
   for insert
   to authenticated
-  with check ((select auth.uid()) = claimant_id);
+  with check (
+    (select auth.uid()) = claimant_id
+    and claim_status = 'pending'
+    and moderator_notes is null
+  );
 
 create policy "Users can read own ownership claims"
   on public.ownership_claims
@@ -224,4 +219,7 @@ create policy "Users can read own ownership claims"
 create policy "Anyone can insert reports"
   on public.reports
   for insert
-  with check (reporter_id is null or (select auth.uid()) = reporter_id);
+  with check (
+    (reporter_id is null or (select auth.uid()) = reporter_id)
+    and status = 'pending'
+  );
