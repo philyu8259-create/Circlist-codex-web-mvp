@@ -3,10 +3,9 @@ import Link from "next/link";
 import { AppHeader } from "@/components/AppHeader";
 import { GroupCard } from "@/components/GroupCard";
 import { SearchPanel } from "@/components/SearchPanel";
-import { categories } from "@/lib/domain";
-import { getCategoryLabel } from "@/lib/domain";
+import { getApprovedGroups } from "@/lib/data/groups";
+import { categories, getCategoryLabel } from "@/lib/domain";
 import { getDictionary, normalizeLocale } from "@/lib/i18n";
-import { sampleGroups } from "@/lib/mock-data";
 import { searchGroups } from "@/lib/search";
 
 type SearchParams = Promise<
@@ -26,7 +25,8 @@ export default async function HomePage({
   const locale = normalizeLocale(firstParam(params?.lang));
   const query = firstParam(params?.q) ?? "";
   const copy = getDictionary(locale);
-  const groups = searchGroups(sampleGroups, { query });
+  const approvedGroups = await getApprovedGroups();
+  const groups = query ? searchGroups(approvedGroups, { query }) : approvedGroups;
 
   return (
     <>
@@ -43,7 +43,7 @@ export default async function HomePage({
           </div>
           <div className="rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm text-ink/70 shadow-sm">
             <span className="block text-2xl font-semibold text-leaf">
-              {searchGroups(sampleGroups).length}
+              {approvedGroups.length}
             </span>
             {copy.home.approvedCount}
           </div>

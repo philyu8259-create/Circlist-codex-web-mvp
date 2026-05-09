@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { claimGroup } from "@/lib/actions/groups";
 import { reportGroup } from "@/lib/actions/reports";
+import { getApprovedGroupBySlug } from "@/lib/data/groups";
 import { getCategoryLabel, getPlatformLabel } from "@/lib/domain";
 import { getDictionary, normalizeLocale } from "@/lib/i18n";
-import { sampleGroups } from "@/lib/mock-data";
 
 type Params = Promise<{ slug: string }>;
 type SearchParams = Promise<
@@ -32,9 +32,7 @@ export default async function GroupDetailPage({
   const reportState = firstParam(resolvedSearchParams?.report);
   const claimState = firstParam(resolvedSearchParams?.claim);
   const copy = getDictionary(locale);
-  const group = sampleGroups.find(
-    (item) => item.slug === slug && item.moderationStatus === "approved"
-  );
+  const group = await getApprovedGroupBySlug(slug);
 
   if (!group) {
     notFound();

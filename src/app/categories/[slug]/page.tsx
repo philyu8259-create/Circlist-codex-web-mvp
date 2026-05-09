@@ -3,10 +3,9 @@ import { notFound } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { GroupCard } from "@/components/GroupCard";
+import { getApprovedGroups } from "@/lib/data/groups";
 import { categories, getCategoryLabel, type CategorySlug } from "@/lib/domain";
 import { getDictionary, normalizeLocale } from "@/lib/i18n";
-import { sampleGroups } from "@/lib/mock-data";
-import { searchGroups } from "@/lib/search";
 
 type Params = Promise<{ slug: string }>;
 type SearchParams = Promise<
@@ -39,7 +38,7 @@ export default async function CategoryPage({
     notFound();
   }
 
-  const groups = searchGroups(sampleGroups, { category: slug });
+  const groups = await getApprovedGroups({ category: slug });
   const categoryLabel = getCategoryLabel(slug, locale);
 
   return (
