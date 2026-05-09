@@ -26,6 +26,27 @@ export async function getCurrentUser() {
   return user;
 }
 
+export async function getCurrentProfile() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    return null;
+  }
+
+  return data as { id: string; role: "user" | "moderator" | "admin" } | null;
+}
+
 function safeNextPath(value: string | undefined): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return null;

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { signOut } from "@/lib/actions/auth";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { LanguageSwitch } from "./LanguageSwitch";
 
@@ -18,7 +18,11 @@ export async function AppHeader({
 }: AppHeaderProps) {
   const copy = getDictionary(locale);
   const langQuery = locale === "zh" ? "?lang=zh" : "?lang=en";
-  const user = await getCurrentUser();
+  const [user, profile] = await Promise.all([
+    getCurrentUser(),
+    getCurrentProfile()
+  ]);
+  const isAdmin = profile?.role === "admin";
 
   return (
     <header className="border-b border-ink/10 bg-paper/95">
@@ -49,6 +53,14 @@ export async function AppHeader({
           >
             {copy.nav.myGroups}
           </Link>
+          {isAdmin ? (
+            <Link
+              className="hidden rounded-md bg-ink px-3 py-2 text-sm font-semibold text-white transition hover:bg-leaf sm:inline"
+              href={`/admin${langQuery}`}
+            >
+              {copy.nav.admin}
+            </Link>
+          ) : null}
           {user ? (
             <form action={signOut}>
               <input name="lang" type="hidden" value={locale} />

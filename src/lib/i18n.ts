@@ -104,8 +104,13 @@ type Dictionary = {
     title: string;
     intro: string;
     accessRequired: string;
+    accessConfirmed: string;
     liveUnavailable: string;
     emptyQueue: string;
+    pendingSubmissions: string;
+    pendingClaims: string;
+    pendingReports: string;
+    publishedGroups: string;
     submissionsTitle: string;
     submissionsDescription: string;
     claimsTitle: string;
@@ -310,8 +315,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       title: "审核队列",
       intro: "集中处理新群提交、群主认领和加入方式问题反馈。",
       accessRequired: "需要管理员账号登录后才能读取实时队列。",
+      accessConfirmed: "管理员权限已确认，当前连接真实 Supabase 审核队列。",
       liveUnavailable: "实时队列暂时不可用，当前显示为空队列。",
       emptyQueue: "当前没有待处理项目。",
+      pendingSubmissions: "待审核提交",
+      pendingClaims: "待处理认领",
+      pendingReports: "待处理反馈",
+      publishedGroups: "公开群组",
       submissionsTitle: "新群提交",
       submissionsDescription: "审核用户提交的新兴趣群和加入方式。",
       claimsTitle: "群主认领",
@@ -535,8 +545,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       intro:
         "Review new community submissions, ownership claims, and invalid join feedback.",
       accessRequired: "Sign in with an admin account to load live queues.",
+      accessConfirmed:
+        "Admin access confirmed. This page is connected to the live Supabase review queues.",
       liveUnavailable: "Live queues are unavailable, so empty queues are shown.",
       emptyQueue: "No pending items.",
+      pendingSubmissions: "Pending submissions",
+      pendingClaims: "Pending claims",
+      pendingReports: "Pending reports",
+      publishedGroups: "Published groups",
       submissionsTitle: "New submissions",
       submissionsDescription: "Review newly submitted communities and join paths.",
       claimsTitle: "Ownership claims",

@@ -54,6 +54,7 @@ type AdminQueues = {
   submissions: QueueItem[];
   claims: QueueItem[];
   reports: QueueItem[];
+  publishedGroupCount: number;
   canLoadLive: boolean;
   liveUnavailable: boolean;
 };
@@ -104,6 +105,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
     submissions: [],
     claims: [],
     reports: [],
+    publishedGroupCount: 0,
     canLoadLive: false,
     liveUnavailable: !hasSupabaseEnv()
   };
@@ -132,7 +134,8 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
       return emptyQueues;
     }
 
-    const [submissionsResult, claimsResult, reportsResult] = await Promise.all([
+    const [submissionsResult, claimsResult, reportsResult, groupsResult] =
+      await Promise.all([
       supabase
         .from("group_submissions")
         .select(
@@ -162,11 +165,18 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
         .select("id, report_type, details, status, created_at")
         .eq("status", "pending")
         .order("created_at", { ascending: true })
-        .limit(10)
+        .limit(10),
+      supabase
+        .from("groups")
+        .select("id", { count: "exact", head: true })
+        .eq("moderation_status", "approved")
     ]);
 
     const queryError =
-      submissionsResult.error || claimsResult.error || reportsResult.error;
+      submissionsResult.error ||
+      claimsResult.error ||
+      reportsResult.error ||
+      groupsResult.error;
 
     if (queryError) {
       return { ...emptyQueues, canLoadLive: true, liveUnavailable: true };
@@ -180,6 +190,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
     return {
       canLoadLive: true,
       liveUnavailable: false,
+      publishedGroupCount: groupsResult.count ?? 0,
       submissions: submissionRows.map((item) => ({
         id: item.id,
         title: item.proposed_name,
@@ -276,6 +287,24 @@ export default async function AdminPage({
   const review = firstParam(params?.review);
   const copy = getDictionary(locale);
   const queues = await getAdminQueues(locale);
+  const stats = [
+    {
+      label: copy.admin.pendingSubmissions,
+      value: queues.canLoadLive ? String(queues.submissions.length) : "-"
+    },
+    {
+      label: copy.admin.pendingClaims,
+      value: queues.canLoadLive ? String(queues.claims.length) : "-"
+    },
+    {
+      label: copy.admin.pendingReports,
+      value: queues.canLoadLive ? String(queues.reports.length) : "-"
+    },
+    {
+      label: copy.admin.publishedGroups,
+      value: queues.canLoadLive ? String(queues.publishedGroupCount) : "-"
+    }
+  ];
 
   return (
     <>
@@ -296,6 +325,12 @@ export default async function AdminPage({
           </p>
         ) : null}
 
+        {queues.canLoadLive && !queues.liveUnavailable ? (
+          <p className="rounded-lg border border-leaf/25 bg-leaf/10 px-4 py-3 text-sm font-medium text-leaf">
+            {copy.admin.accessConfirmed}
+          </p>
+        ) : null}
+
         {queues.liveUnavailable ? (
           <p className="rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-ink/65">
             {copy.admin.liveUnavailable}
@@ -307,6 +342,22 @@ export default async function AdminPage({
             {review === "updated" ? copy.admin.reviewed : copy.admin.reviewFailed}
           </p>
         ) : null}
+
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map((item) => (
+            <div
+              className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm"
+              key={item.label}
+            >
+              <span className="block text-3xl font-semibold text-leaf">
+                {item.value}
+              </span>
+              <span className="mt-2 block text-sm font-medium text-ink/65">
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </section>
 
         <div className="grid gap-5 lg:grid-cols-3">
           <section className="grid content-start gap-3">
