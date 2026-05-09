@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { AppHeader } from "@/components/AppHeader";
 import { GroupCard } from "@/components/GroupCard";
@@ -33,12 +34,13 @@ export default async function CategoryPage({
   ]);
   const locale = normalizeLocale(firstParam(resolvedSearchParams?.lang));
   const copy = getDictionary(locale);
-  const groups = isCategorySlug(slug)
-    ? searchGroups(sampleGroups, { category: slug })
-    : [];
-  const categoryLabel = isCategorySlug(slug)
-    ? getCategoryLabel(slug, locale)
-    : slug;
+
+  if (!isCategorySlug(slug)) {
+    notFound();
+  }
+
+  const groups = searchGroups(sampleGroups, { category: slug });
+  const categoryLabel = getCategoryLabel(slug, locale);
 
   return (
     <>
