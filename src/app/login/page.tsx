@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/AppHeader";
 import { sendMagicLink } from "@/lib/actions/auth";
 import { getSafeNextPath } from "@/lib/auth";
+import { getAuthEmailChannel } from "@/lib/auth-email";
 import { getDictionary } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/request-locale";
 
@@ -22,6 +23,7 @@ export default async function LoginPage({
   const authState = firstParam(params?.auth);
   const next = getSafeNextPath(firstParam(params?.next));
   const copy = getDictionary(locale);
+  const emailChannel = getAuthEmailChannel();
 
   return (
     <>
@@ -85,6 +87,21 @@ export default async function LoginPage({
             {copy.auth.sendLink}
           </button>
         </form>
+
+        <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-ink">
+            {copy.auth.emailChannelTitle}
+          </h2>
+          <p
+            className={`mt-2 text-sm leading-6 ${
+              emailChannel === "resend" ? "text-leaf" : "text-ink/65"
+            }`}
+          >
+            {emailChannel === "resend"
+              ? copy.auth.resendChannel
+              : copy.auth.supabaseChannel}
+          </p>
+        </section>
       </main>
     </>
   );

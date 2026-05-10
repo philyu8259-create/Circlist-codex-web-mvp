@@ -54,6 +54,9 @@ type AdminQueues = {
   submissions: QueueItem[];
   claims: QueueItem[];
   reports: QueueItem[];
+  pendingSubmissionCount: number;
+  pendingClaimCount: number;
+  pendingReportCount: number;
   publishedGroupCount: number;
   canLoadLive: boolean;
   liveUnavailable: boolean;
@@ -105,6 +108,9 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
     submissions: [],
     claims: [],
     reports: [],
+    pendingSubmissionCount: 0,
+    pendingClaimCount: 0,
+    pendingReportCount: 0,
     publishedGroupCount: 0,
     canLoadLive: false,
     liveUnavailable: !hasSupabaseEnv()
@@ -136,9 +142,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
 
     const [submissionsResult, claimsResult, reportsResult, groupsResult] =
       await Promise.all([
-      supabase
-        .from("group_submissions")
-        .select(
+        supabase.from("group_submissions").select(
           `
           id,
           proposed_name,
@@ -149,28 +153,33 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
           moderation_status,
           created_at,
           categories(slug, name_zh, name_en)
-        `
+        `,
+          { count: "exact" }
         )
-        .eq("moderation_status", "pending")
-        .order("created_at", { ascending: true })
-        .limit(10),
-      supabase
-        .from("ownership_claims")
-        .select("id, claim_status, evidence, created_at, groups(name, slug)")
-        .eq("claim_status", "pending")
-        .order("created_at", { ascending: true })
-        .limit(10),
-      supabase
-        .from("reports")
-        .select("id, report_type, details, status, created_at")
-        .eq("status", "pending")
-        .order("created_at", { ascending: true })
-        .limit(10),
-      supabase
-        .from("groups")
-        .select("id", { count: "exact", head: true })
-        .eq("moderation_status", "approved")
-    ]);
+          .eq("moderation_status", "pending")
+          .order("created_at", { ascending: true })
+          .limit(10),
+        supabase
+          .from("ownership_claims")
+          .select("id, claim_status, evidence, created_at, groups(name, slug)", {
+            count: "exact"
+          })
+          .eq("claim_status", "pending")
+          .order("created_at", { ascending: true })
+          .limit(10),
+        supabase
+          .from("reports")
+          .select("id, report_type, details, status, created_at", {
+            count: "exact"
+          })
+          .eq("status", "pending")
+          .order("created_at", { ascending: true })
+          .limit(10),
+        supabase
+          .from("groups")
+          .select("id", { count: "exact", head: true })
+          .eq("moderation_status", "approved")
+      ]);
 
     const queryError =
       submissionsResult.error ||
@@ -190,6 +199,9 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
     return {
       canLoadLive: true,
       liveUnavailable: false,
+      pendingSubmissionCount: submissionsResult.count ?? submissionRows.length,
+      pendingClaimCount: claimsResult.count ?? claimRows.length,
+      pendingReportCount: reportsResult.count ?? reportRows.length,
       publishedGroupCount: groupsResult.count ?? 0,
       submissions: submissionRows.map((item) => ({
         id: item.id,
@@ -277,6 +289,27 @@ function QueueEmpty({ message }: { message: string }) {
   );
 }
 
+function StatusNotice({
+  tone,
+  children
+}: {
+  tone: "error" | "success" | "neutral";
+  children: React.ReactNode;
+}) {
+  const className =
+    tone === "error"
+      ? "border-coral/25 bg-coral/10 text-coral"
+      : tone === "success"
+        ? "border-leaf/25 bg-leaf/10 text-leaf"
+        : "border-ink/10 bg-white text-ink/65";
+
+  return (
+    <p className={`rounded-lg border px-4 py-3 text-sm font-medium ${className}`}>
+      {children}
+    </p>
+  );
+}
+
 export default async function AdminPage({
   searchParams
 }: {
@@ -287,18 +320,36 @@ export default async function AdminPage({
   const review = firstParam(params?.review);
   const copy = getDictionary(locale);
   const queues = await getAdminQueues(locale);
+  const totalPending =
+    queues.pendingSubmissionCount +
+    queues.pendingClaimCount +
+    queues.pendingReportCount;
+  const priorityItems = [
+    {
+      count: queues.pendingSubmissionCount,
+      label: copy.admin.pendingSubmissions
+    },
+    {
+      count: queues.pendingClaimCount,
+      label: copy.admin.pendingClaims
+    },
+    {
+      count: queues.pendingReportCount,
+      label: copy.admin.pendingReports
+    }
+  ].filter((item) => item.count > 0);
   const stats = [
     {
       label: copy.admin.pendingSubmissions,
-      value: queues.canLoadLive ? String(queues.submissions.length) : "-"
+      value: queues.canLoadLive ? String(queues.pendingSubmissionCount) : "-"
     },
     {
       label: copy.admin.pendingClaims,
-      value: queues.canLoadLive ? String(queues.claims.length) : "-"
+      value: queues.canLoadLive ? String(queues.pendingClaimCount) : "-"
     },
     {
       label: copy.admin.pendingReports,
-      value: queues.canLoadLive ? String(queues.reports.length) : "-"
+      value: queues.canLoadLive ? String(queues.pendingReportCount) : "-"
     },
     {
       label: copy.admin.publishedGroups,
@@ -310,37 +361,55 @@ export default async function AdminPage({
     <>
       <AppHeader locale={locale} pathname="/admin" />
       <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-5 py-7">
-        <section>
-          <h1 className="text-3xl font-semibold leading-tight text-ink sm:text-4xl">
-            {copy.admin.title}
-          </h1>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-ink/68">
-            {copy.admin.intro}
-          </p>
+        <section className="grid gap-5 lg:grid-cols-[1fr_20rem]">
+          <div className="rounded-lg border border-ink/10 bg-white px-5 py-6 shadow-sm">
+            <h1 className="text-3xl font-semibold leading-tight text-ink sm:text-4xl">
+              {copy.admin.title}
+            </h1>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-ink/68">
+              {copy.admin.intro}
+            </p>
+          </div>
+
+          <aside className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
+            <span className="text-sm font-medium text-ink/55">
+              {copy.admin.priorityTitle}
+            </span>
+            <strong className="mt-2 block text-4xl font-semibold text-leaf">
+              {queues.canLoadLive ? totalPending : "-"}
+            </strong>
+            <p className="mt-2 text-sm leading-6 text-ink/60">
+              {priorityItems.length > 0
+                ? priorityItems
+                    .map((item) => `${item.label} ${item.count}`)
+                    .join(" · ")
+                : copy.admin.priorityEmpty}
+            </p>
+          </aside>
         </section>
 
         {!queues.canLoadLive ? (
-          <p className="rounded-lg border border-coral/25 bg-coral/10 px-4 py-3 text-sm font-medium text-coral">
+          <StatusNotice tone="error">
             {copy.admin.accessRequired}
-          </p>
+          </StatusNotice>
         ) : null}
 
         {queues.canLoadLive && !queues.liveUnavailable ? (
-          <p className="rounded-lg border border-leaf/25 bg-leaf/10 px-4 py-3 text-sm font-medium text-leaf">
+          <StatusNotice tone="success">
             {copy.admin.accessConfirmed}
-          </p>
+          </StatusNotice>
         ) : null}
 
         {queues.liveUnavailable ? (
-          <p className="rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-ink/65">
+          <StatusNotice tone="neutral">
             {copy.admin.liveUnavailable}
-          </p>
+          </StatusNotice>
         ) : null}
 
         {review ? (
-          <p className="rounded-lg border border-leaf/25 bg-leaf/10 px-4 py-3 text-sm font-medium text-leaf">
+          <StatusNotice tone={review === "updated" ? "success" : "error"}>
             {review === "updated" ? copy.admin.reviewed : copy.admin.reviewFailed}
-          </p>
+          </StatusNotice>
         ) : null}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -359,122 +428,142 @@ export default async function AdminPage({
           ))}
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-3">
-          <section className="grid content-start gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-ink">
-                {copy.admin.submissionsTitle}
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-ink/60">
-                {copy.admin.submissionsDescription}
-              </p>
-            </div>
+        <div className="grid gap-5 lg:grid-cols-[1fr_18rem]">
+          <div className="grid gap-5">
+            <section className="grid content-start gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-ink">
+                  {copy.admin.submissionsTitle}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-ink/60">
+                  {copy.admin.submissionsDescription}
+                </p>
+              </div>
 
-            {queues.submissions.length > 0 ? (
-              queues.submissions.map((item) => (
-                <AdminQueue
-                  description={item.description}
-                  key={item.id}
-                  meta={item.meta}
-                  status={`${copy.admin.statusLabel}: ${item.status}`}
-                  title={item.title}
-                >
-                  <form action={reviewSubmission} className="grid gap-3">
-                    <input name="lang" type="hidden" value={locale} />
-                    <input name="submissionId" type="hidden" value={item.id} />
-                    <textarea
-                      className="min-h-20 rounded-md border border-ink/15 px-3 py-2 text-sm outline-none transition focus:border-leaf"
-                      name="reviewerNotes"
-                      placeholder={copy.admin.reviewerNotes}
-                    />
-                    <ReviewButtons
-                      approveLabel={copy.admin.approve}
-                      rejectLabel={copy.admin.reject}
-                      requestChangesLabel={copy.admin.requestChanges}
-                    />
-                  </form>
-                </AdminQueue>
-              ))
-            ) : (
-              <QueueEmpty message={copy.admin.emptyQueue} />
-            )}
-          </section>
+              {queues.submissions.length > 0 ? (
+                queues.submissions.map((item) => (
+                  <AdminQueue
+                    description={item.description}
+                    key={item.id}
+                    meta={item.meta}
+                    status={`${copy.admin.statusLabel}: ${item.status}`}
+                    title={item.title}
+                  >
+                    <form action={reviewSubmission} className="grid gap-3">
+                      <input name="lang" type="hidden" value={locale} />
+                      <input name="submissionId" type="hidden" value={item.id} />
+                      <textarea
+                        className="min-h-20 rounded-md border border-ink/15 px-3 py-2 text-sm outline-none transition focus:border-leaf"
+                        name="reviewerNotes"
+                        placeholder={copy.admin.reviewerNotes}
+                      />
+                      <ReviewButtons
+                        approveLabel={copy.admin.approve}
+                        rejectLabel={copy.admin.reject}
+                        requestChangesLabel={copy.admin.requestChanges}
+                      />
+                    </form>
+                  </AdminQueue>
+                ))
+              ) : (
+                <QueueEmpty message={copy.admin.emptyQueue} />
+              )}
+            </section>
 
-          <section className="grid content-start gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-ink">
-                {copy.admin.claimsTitle}
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-ink/60">
-                {copy.admin.claimsDescription}
-              </p>
-            </div>
+            <section className="grid gap-5 lg:grid-cols-2">
+              <div className="grid content-start gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-ink">
+                    {copy.admin.claimsTitle}
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-ink/60">
+                    {copy.admin.claimsDescription}
+                  </p>
+                </div>
 
-            {queues.claims.length > 0 ? (
-              queues.claims.map((item) => (
-                <AdminQueue
-                  description={item.description}
-                  key={item.id}
-                  meta={item.meta}
-                  status={`${copy.admin.statusLabel}: ${item.status}`}
-                  title={item.title}
-                >
-                  <form action={reviewOwnershipClaim} className="grid gap-3">
-                    <input name="lang" type="hidden" value={locale} />
-                    <input name="claimId" type="hidden" value={item.id} />
-                    <textarea
-                      className="min-h-20 rounded-md border border-ink/15 px-3 py-2 text-sm outline-none transition focus:border-leaf"
-                      name="reviewerNotes"
-                      placeholder={copy.admin.reviewerNotes}
-                    />
-                    <ReviewButtons
-                      approveLabel={copy.admin.approve}
-                      rejectLabel={copy.admin.reject}
-                      requestChangesLabel={copy.admin.requestChanges}
-                      showRequestChanges={false}
-                    />
-                  </form>
-                </AdminQueue>
-              ))
-            ) : (
-              <QueueEmpty message={copy.admin.emptyQueue} />
-            )}
-          </section>
+                {queues.claims.length > 0 ? (
+                  queues.claims.map((item) => (
+                    <AdminQueue
+                      description={item.description}
+                      key={item.id}
+                      meta={item.meta}
+                      status={`${copy.admin.statusLabel}: ${item.status}`}
+                      title={item.title}
+                    >
+                      <form action={reviewOwnershipClaim} className="grid gap-3">
+                        <input name="lang" type="hidden" value={locale} />
+                        <input name="claimId" type="hidden" value={item.id} />
+                        <textarea
+                          className="min-h-20 rounded-md border border-ink/15 px-3 py-2 text-sm outline-none transition focus:border-leaf"
+                          name="reviewerNotes"
+                          placeholder={copy.admin.reviewerNotes}
+                        />
+                        <ReviewButtons
+                          approveLabel={copy.admin.approve}
+                          rejectLabel={copy.admin.reject}
+                          requestChangesLabel={copy.admin.requestChanges}
+                          showRequestChanges={false}
+                        />
+                      </form>
+                    </AdminQueue>
+                  ))
+                ) : (
+                  <QueueEmpty message={copy.admin.emptyQueue} />
+                )}
+              </div>
 
-          <section className="grid content-start gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-ink">
-                {copy.admin.reportsTitle}
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-ink/60">
-                {copy.admin.reportsDescription}
-              </p>
-            </div>
+              <div className="grid content-start gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-ink">
+                    {copy.admin.reportsTitle}
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-ink/60">
+                    {copy.admin.reportsDescription}
+                  </p>
+                </div>
 
-            {queues.reports.length > 0 ? (
-              queues.reports.map((item) => (
-                <AdminQueue
-                  description={item.description}
-                  key={item.id}
-                  meta={item.meta}
-                  status={`${copy.admin.statusLabel}: ${item.status}`}
-                  title={item.title}
-                >
-                  <form action={reviewReport} className="grid gap-3">
-                    <input name="lang" type="hidden" value={locale} />
-                    <input name="reportId" type="hidden" value={item.id} />
-                    <ReviewButtons
-                      approveLabel={copy.admin.approve}
-                      rejectLabel={copy.admin.reject}
-                      requestChangesLabel={copy.admin.requestChanges}
-                    />
-                  </form>
-                </AdminQueue>
-              ))
-            ) : (
-              <QueueEmpty message={copy.admin.emptyQueue} />
-            )}
-          </section>
+                {queues.reports.length > 0 ? (
+                  queues.reports.map((item) => (
+                    <AdminQueue
+                      description={item.description}
+                      key={item.id}
+                      meta={item.meta}
+                      status={`${copy.admin.statusLabel}: ${item.status}`}
+                      title={item.title}
+                    >
+                      <form action={reviewReport} className="grid gap-3">
+                        <input name="lang" type="hidden" value={locale} />
+                        <input name="reportId" type="hidden" value={item.id} />
+                        <ReviewButtons
+                          approveLabel={copy.admin.approve}
+                          rejectLabel={copy.admin.reject}
+                          requestChangesLabel={copy.admin.requestChanges}
+                        />
+                      </form>
+                    </AdminQueue>
+                  ))
+                ) : (
+                  <QueueEmpty message={copy.admin.emptyQueue} />
+                )}
+              </div>
+            </section>
+          </div>
+
+          <aside className="h-fit rounded-lg border border-ink/10 bg-white p-5 shadow-sm lg:sticky lg:top-28">
+            <h2 className="text-base font-semibold text-ink">
+              {copy.admin.workflowTitle}
+            </h2>
+            <ol className="mt-4 grid gap-3">
+              {copy.admin.workflowItems.map((item, index) => (
+                <li className="flex gap-3 text-sm leading-6 text-ink/70" key={item}>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-leaf/10 text-xs font-semibold text-leaf">
+                    {index + 1}
+                  </span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ol>
+          </aside>
         </div>
       </main>
     </>

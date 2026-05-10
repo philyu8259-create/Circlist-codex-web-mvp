@@ -54,6 +54,19 @@ you can generate a one-time login link without sending email:
 npm run auth:link -- user@example.com
 ```
 
+For production sign-in emails, configure the Resend channel in `.env.local` or
+your deployment environment:
+
+```bash
+RESEND_API_KEY=
+AUTH_EMAIL_FROM=Circlist <login@yourdomain.com>
+AUTH_EMAIL_REPLY_TO=
+```
+
+When `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, and `SUPABASE_SERVICE_ROLE_KEY` are
+present, Circlist generates the Supabase magic link on the server and sends it
+through Resend. Otherwise it falls back to Supabase's default email provider.
+
 ## Bilingual Behavior
 
 Circlist supports Chinese and English in the MVP. Use `?lang=zh` or `?lang=en` on supported routes to select a language directly. The in-app language switch preserves the current path and updates the `lang` query parameter.

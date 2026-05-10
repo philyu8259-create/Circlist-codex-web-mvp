@@ -34,38 +34,38 @@ export async function AppHeader({
           <span className="block text-xs text-ink/60">{copy.subtitle}</span>
         </Link>
 
-        <div className="flex w-full items-center gap-2 overflow-x-auto pb-1 sm:w-auto sm:gap-3 sm:overflow-visible sm:pb-0">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:gap-3">
           <Link
-            className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
+            className="rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
             href={`/${langQuery}`}
           >
             {copy.nav.browse}
           </Link>
           <Link
-            className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
+            className="rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
             href={`/submit${langQuery}`}
           >
             {copy.nav.submit}
           </Link>
           <Link
-            className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
+            className="rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
             href={`/my-groups${langQuery}`}
           >
             {copy.nav.myGroups}
           </Link>
           {isAdmin ? (
             <Link
-              className="shrink-0 rounded-md bg-ink px-3 py-2 text-sm font-semibold text-white transition hover:bg-leaf"
+              className="rounded-md bg-ink px-3 py-2 text-sm font-semibold text-white transition hover:bg-leaf"
               href={`/admin${langQuery}`}
             >
               {copy.nav.admin}
             </Link>
           ) : null}
           {user ? (
-            <form action={signOut}>
+            <form action={signOut} className="contents">
               <input name="lang" type="hidden" value={locale} />
               <button
-                className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
+                className="rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
                 type="submit"
               >
                 {copy.nav.signOut}
@@ -73,7 +73,7 @@ export async function AppHeader({
             </form>
           ) : (
             <Link
-              className="shrink-0 rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
+              className="rounded-md px-2.5 py-2 text-sm font-medium text-ink/70 transition hover:bg-white hover:text-leaf"
               href={`/login${langQuery}`}
             >
               {copy.nav.signIn}

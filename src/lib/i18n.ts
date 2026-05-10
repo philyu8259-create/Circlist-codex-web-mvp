@@ -130,6 +130,10 @@ type Dictionary = {
     approve: string;
     reject: string;
     requestChanges: string;
+    priorityTitle: string;
+    priorityEmpty: string;
+    workflowTitle: string;
+    workflowItems: string[];
     reviewed: string;
     reviewFailed: string;
   };
@@ -143,6 +147,9 @@ type Dictionary = {
     networkError: string;
     rateLimited: string;
     required: string;
+    emailChannelTitle: string;
+    resendChannel: string;
+    supabaseChannel: string;
   };
   search: {
     label: string;
@@ -355,6 +362,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       approve: "通过",
       reject: "拒绝",
       requestChanges: "要求修改",
+      priorityTitle: "今日优先处理",
+      priorityEmpty: "当前没有积压事项，可以继续补充样本群或检查公开列表质量。",
+      workflowTitle: "审核工作流",
+      workflowItems: [
+        "先处理新群提交，确认主题、简介和加入入口真实可用。",
+        "再处理认领请求，只给证据充分的群主开放维护权。",
+        "最后处理举报和失效反馈，必要时下架或标记需要更新。"
+      ],
       reviewed: "审核状态已更新。",
       reviewFailed: "审核更新失败，请稍后重试。"
     },
@@ -367,7 +382,11 @@ const dictionaries: Record<Locale, Dictionary> = {
       error: "登录链接发送失败，请稍后重试。",
       networkError: "连接 Supabase 超时，请检查网络后再试一次。",
       rateLimited: "登录邮件发送太频繁，请稍等一会儿再试。",
-      required: "请先登录后继续。"
+      required: "请先登录后继续。",
+      emailChannelTitle: "邮件发送通道",
+      resendChannel: "当前已配置正式邮件通道，登录链接会通过 Resend 发送。",
+      supabaseChannel:
+        "当前仍使用 Supabase 默认邮件通道，适合测试但容易触发低频率限制。配置 Resend 后会自动切换。"
     },
     search: {
       label: "搜索兴趣群",
@@ -604,6 +623,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       approve: "Approve",
       reject: "Reject",
       requestChanges: "Request changes",
+      priorityTitle: "Today priority",
+      priorityEmpty:
+        "No backlog right now. You can add more samples or review public listing quality.",
+      workflowTitle: "Review workflow",
+      workflowItems: [
+        "Start with new submissions and verify the topic, description, and join path.",
+        "Then review ownership claims and grant access only when evidence is clear.",
+        "Finish with reports and invalid joins, marking outdated groups when needed."
+      ],
       reviewed: "Review status updated.",
       reviewFailed: "Review update failed. Please try again later."
     },
@@ -617,7 +645,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       error: "Could not send the sign-in link. Please try again.",
       networkError: "Connection to Supabase timed out. Check the network and try again.",
       rateLimited: "Too many sign-in emails were requested. Please wait and try again.",
-      required: "Please sign in to continue."
+      required: "Please sign in to continue.",
+      emailChannelTitle: "Email delivery channel",
+      resendChannel:
+        "Production email is configured. Sign-in links are sent through Resend.",
+      supabaseChannel:
+        "The app is still using Supabase's default email channel. It is fine for testing but has low sending limits. Configure Resend to switch automatically."
     },
     search: {
       label: "Search groups",

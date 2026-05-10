@@ -48,7 +48,7 @@ export function LanguageSwitch({
         <Link
           aria-current={locale === item.locale ? "page" : undefined}
           className={[
-            "rounded-full px-3 py-1.5 transition",
+            "whitespace-nowrap rounded-full px-3 py-1.5 transition",
             locale === item.locale
               ? "bg-ink text-white"
               : "text-ink/65 hover:bg-paper hover:text-ink"

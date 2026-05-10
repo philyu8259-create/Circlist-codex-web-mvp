@@ -47,7 +47,8 @@ async function main() {
 
   const email = normalizeEmail(process.argv[2]);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://127.0.0.1:3000";
-  const redirectTo = `${siteUrl}/auth/callback?lang=zh&next=/`;
+  const next = "/";
+  const redirectTo = `${siteUrl}/auth/callback?lang=zh&next=${encodeURIComponent(next)}`;
   const supabase = createClient<Database>(
     requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
     requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
@@ -69,7 +70,13 @@ async function main() {
   if (error) throw error;
 
   console.log(`Open this one-time local login link for ${email}:`);
-  console.log(data.properties.action_link);
+  const tokenHash = data.properties.hashed_token;
+  const confirmUrl =
+    typeof tokenHash === "string" && tokenHash
+      ? `${siteUrl}/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=email&lang=zh&next=${encodeURIComponent(next)}`
+      : data.properties.action_link;
+
+  console.log(confirmUrl);
 }
 
 main().catch((error: unknown) => {
