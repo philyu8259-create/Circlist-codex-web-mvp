@@ -102,11 +102,19 @@ type Dictionary = {
     emptyTitle: string;
     emptyDescription: string;
     submittedSuccess: string;
+    resubmittedSuccess: string;
+    resubmitError: string;
+    resubmitValidationError: string;
     setupRequired: string;
     authRequired: string;
     submissionsTitle: string;
     claimsTitle: string;
     notes: string;
+    needsActionTitle: string;
+    needsActionDescription: string;
+    editTitle: string;
+    keepExistingQr: string;
+    resubmitButton: string;
     platformLabel: string;
     categoryLabel: string;
     joinMethodLabel: string;
@@ -354,11 +362,20 @@ const dictionaries: Record<Locale, Dictionary> = {
       emptyTitle: "暂时没有可展示的群组记录",
       emptyDescription: "你提交或认领的群组会出现在这里。",
       submittedSuccess: "群组已提交，当前状态为审核中。",
+      resubmittedSuccess: "修改已重新提交，当前状态回到审核中。",
+      resubmitError: "重新提交失败，请稍后重试。",
+      resubmitValidationError: "请补全必填项后再重新提交。",
       setupRequired: "本地预览未配置 Supabase，暂时显示为空状态。",
       authRequired: "登录后可以查看你提交和认领的群组。",
       submissionsTitle: "我的提交",
       claimsTitle: "我的认领",
       notes: "审核备注",
+      needsActionTitle: "需要修改",
+      needsActionDescription:
+        "审核员要求补充或修改这条提交。根据审核备注更新信息后，可以重新送审。",
+      editTitle: "修改后重新提交",
+      keepExistingQr: "未上传新二维码时会保留已有二维码。",
+      resubmitButton: "重新提交审核",
       platformLabel: "平台",
       categoryLabel: "主题",
       joinMethodLabel: "加入方式",
@@ -631,12 +648,22 @@ const dictionaries: Record<Locale, Dictionary> = {
       emptyTitle: "No group records yet",
       emptyDescription: "Groups you submit or claim will appear here.",
       submittedSuccess: "Group submitted and pending review.",
+      resubmittedSuccess: "Changes resubmitted and moved back to pending review.",
+      resubmitError: "Could not resubmit changes. Please try again.",
+      resubmitValidationError:
+        "Please complete the required fields before resubmitting.",
       setupRequired:
         "Supabase is not configured for this local preview, so an empty state is shown.",
       authRequired: "Sign in to view groups you submitted or claimed.",
       submissionsTitle: "My submissions",
       claimsTitle: "My claims",
       notes: "Reviewer notes",
+      needsActionTitle: "Needs changes",
+      needsActionDescription:
+        "A reviewer requested updates for this submission. Edit the details below and send it back to review.",
+      editTitle: "Edit and resubmit",
+      keepExistingQr: "The existing QR code is kept unless you upload a new one.",
+      resubmitButton: "Resubmit for review",
       platformLabel: "Platform",
       categoryLabel: "Topic",
       joinMethodLabel: "Join method",

@@ -1,5 +1,14 @@
+import type { ReactNode } from "react";
+
 import { AppHeader } from "@/components/AppHeader";
+import { resubmitGroupSubmission } from "@/lib/actions/groups";
 import { getCurrentUser } from "@/lib/auth";
+import {
+  categories,
+  getCategoryLabel,
+  getPlatformLabel,
+  platforms
+} from "@/lib/domain";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/request-locale";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
@@ -128,6 +137,7 @@ export default async function MyGroupsPage({
   const params = await searchParams;
   const locale = await getRequestLocale(firstParam(params?.lang));
   const submitted = firstParam(params?.submitted);
+  const resubmit = firstParam(params?.resubmit);
   const copy = getDictionary(locale);
   const data = await getMyGroupData();
 
@@ -172,6 +182,20 @@ export default async function MyGroupsPage({
           </p>
         ) : null}
 
+        {resubmit === "sent" ? (
+          <p className="rounded-lg border border-leaf/25 bg-leaf/10 px-4 py-3 text-sm font-medium text-leaf">
+            {copy.myGroups.resubmittedSuccess}
+          </p>
+        ) : null}
+
+        {resubmit === "error" || resubmit === "validation" ? (
+          <p className="rounded-lg border border-coral/25 bg-coral/10 px-4 py-3 text-sm font-medium text-coral">
+            {resubmit === "validation"
+              ? copy.myGroups.resubmitValidationError
+              : copy.myGroups.resubmitError}
+          </p>
+        ) : null}
+
         {data.setupMissing || data.authMissing ? (
           <p className="rounded-lg border border-ink/10 bg-white px-4 py-3 text-sm font-medium text-ink/65">
             {data.setupMissing
@@ -213,7 +237,15 @@ export default async function MyGroupsPage({
                   status={item.moderation_status}
                   timestamp={item.created_at}
                   title={item.proposed_name}
-                />
+                >
+                  {item.moderation_status === "changes_requested" ? (
+                    <ResubmitSubmissionForm
+                      copy={copy}
+                      item={item}
+                      locale={locale}
+                    />
+                  ) : null}
+                </RecordCard>
               ))}
             </section>
 
@@ -258,7 +290,8 @@ function RecordCard({
   timestamp,
   notes,
   notesLabel,
-  locale
+  locale,
+  children
 }: {
   title: string;
   description: string;
@@ -268,9 +301,16 @@ function RecordCard({
   notes: string | null;
   notesLabel: string;
   locale: Locale;
+  children?: ReactNode;
 }) {
+  const isNeedsChanges = status === "changes_requested";
+
   return (
-    <article className="rounded-lg border border-ink/10 bg-white p-4 shadow-sm">
+    <article
+      className={`rounded-lg border bg-white p-4 shadow-sm ${
+        isNeedsChanges ? "border-coral/30" : "border-ink/10"
+      }`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-ink">{title}</h3>
@@ -278,7 +318,13 @@ function RecordCard({
             {description}
           </p>
         </div>
-        <span className="rounded-full bg-leaf/10 px-2.5 py-1 text-xs font-semibold text-leaf">
+        <span
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+            isNeedsChanges
+              ? "bg-coral/10 text-coral"
+              : "bg-leaf/10 text-leaf"
+          }`}
+        >
           {status}
         </span>
       </div>
@@ -301,6 +347,9 @@ function RecordCard({
         <p className="mt-3 rounded-md bg-sky px-3 py-2 text-xs leading-5 text-ink/70">
           {notesLabel}: {notes}
         </p>
+      ) : null}
+      {children ? (
+        <div className="mt-4 border-t border-ink/10 pt-4">{children}</div>
       ) : null}
     </article>
   );
@@ -334,4 +383,225 @@ function buildSubmissionDetails(
     { label: copy.descriptionLabel, value: payload.description },
     { label: copy.rulesLabel, value: payload.rulesSummary }
   ]);
+}
+
+function ResubmitSubmissionForm({
+  copy,
+  item,
+  locale
+}: {
+  copy: ReturnType<typeof getDictionary>;
+  item: UserSubmission;
+  locale: Locale;
+}) {
+  const payload = parseSubmissionPayload(item.proposed_payload);
+
+  return (
+    <form action={resubmitGroupSubmission} className="grid gap-4">
+      <input name="lang" type="hidden" value={locale} />
+      <input name="submissionId" type="hidden" value={item.id} />
+      <input
+        name="existingQrCodeStoragePath"
+        type="hidden"
+        value={payload.qrCodeStoragePath}
+      />
+
+      <div className="rounded-md bg-coral/10 px-3 py-3">
+        <h3 className="text-sm font-semibold text-coral">
+          {copy.myGroups.needsActionTitle}
+        </h3>
+        <p className="mt-1 text-xs leading-5 text-ink/65">
+          {copy.myGroups.needsActionDescription}
+        </p>
+      </div>
+
+      <h3 className="text-sm font-semibold text-ink">
+        {copy.myGroups.editTitle}
+      </h3>
+
+      <TextField
+        defaultValue={item.proposed_name}
+        label={copy.submit.name}
+        name="name"
+        required
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-medium text-ink">
+          {copy.submit.platform}
+          <select
+            className="min-h-11 rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+            defaultValue={item.proposed_platform}
+            name="platform"
+            required
+          >
+            {platforms.map((platform) => (
+              <option key={platform} value={platform}>
+                {getPlatformLabel(platform, locale)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-sm font-medium text-ink">
+          {copy.submit.category}
+          <select
+            className="min-h-11 rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+            defaultValue={payload.categorySlug || item.categories?.slug || "ai"}
+            name="categorySlug"
+            required
+          >
+            {categories.map((category) => (
+              <option key={category.slug} value={category.slug}>
+                {getCategoryLabel(category.slug, locale)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <TextField
+        defaultValue={payload.shortDescription}
+        label={copy.submit.shortDescription}
+        name="shortDescription"
+        required
+      />
+      <TextareaField
+        defaultValue={payload.description}
+        label={copy.submit.description}
+        minHeight="min-h-28"
+        name="description"
+        required
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-medium text-ink">
+          {copy.submit.joinMethodType}
+          <select
+            className="min-h-11 rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+            defaultValue={item.proposed_join_method ?? "invite_link"}
+            name="joinMethodType"
+            required
+          >
+            {Object.entries(copy.joinMethodTypes).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <TextField
+          defaultValue={payload.joinMethodValue}
+          label={copy.submit.joinMethodValue}
+          name="joinMethodValue"
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField
+          defaultValue={payload.groupLink}
+          label={copy.submit.groupLink}
+          name="groupLink"
+          placeholder="https://"
+          type="url"
+        />
+        <label className="grid gap-2 text-sm font-medium text-ink">
+          {copy.submit.qrCode}
+          <input
+            accept="image/png,image/jpeg,image/webp"
+            className="min-h-11 rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition file:mr-3 file:rounded-md file:border-0 file:bg-leaf/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-leaf focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+            name="qrCode"
+            type="file"
+          />
+          {payload.qrCodeStoragePath ? (
+            <span className="text-xs font-normal leading-5 text-ink/55">
+              {copy.myGroups.keepExistingQr}
+            </span>
+          ) : null}
+        </label>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <TextField
+          defaultValue={payload.language}
+          label={copy.submit.language}
+          name="language"
+        />
+        <TextField
+          defaultValue={payload.region}
+          label={copy.submit.region}
+          name="region"
+        />
+      </div>
+      <TextareaField
+        defaultValue={payload.rulesSummary}
+        label={copy.submit.rulesSummary}
+        minHeight="min-h-20"
+        name="rulesSummary"
+      />
+
+      <button
+        className="min-h-11 w-full rounded-md bg-leaf px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral focus:outline-none focus:ring-2 focus:ring-leaf/30 sm:w-fit"
+        type="submit"
+      >
+        {copy.myGroups.resubmitButton}
+      </button>
+    </form>
+  );
+}
+
+function TextField({
+  defaultValue,
+  label,
+  name,
+  placeholder,
+  required,
+  type = "text"
+}: {
+  defaultValue?: string;
+  label: string;
+  name: string;
+  placeholder?: string;
+  required?: boolean;
+  type?: string;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-medium text-ink">
+      {label}
+      <input
+        className="min-h-11 rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+        defaultValue={defaultValue}
+        name={name}
+        placeholder={placeholder}
+        required={required}
+        type={type}
+      />
+    </label>
+  );
+}
+
+function TextareaField({
+  defaultValue,
+  label,
+  minHeight,
+  name,
+  required
+}: {
+  defaultValue?: string;
+  label: string;
+  minHeight: string;
+  name: string;
+  required?: boolean;
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-medium text-ink">
+      {label}
+      <textarea
+        className={`${minHeight} rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15`}
+        defaultValue={defaultValue}
+        name={name}
+        required={required}
+      />
+    </label>
+  );
 }

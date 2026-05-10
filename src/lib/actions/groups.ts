@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import {
   categories,
+  getCategoryLabel,
   platforms,
   type CategorySlug,
   type JoinMethodType,
@@ -20,6 +21,8 @@ const joinMethodTypes = [
 
 type GroupSubmissionInsert =
   Database["public"]["Tables"]["group_submissions"]["Insert"];
+type GroupSubmissionUpdate =
+  Database["public"]["Tables"]["group_submissions"]["Update"];
 type OwnershipClaimInsert =
   Database["public"]["Tables"]["ownership_claims"]["Insert"];
 
@@ -31,6 +34,8 @@ const EVIDENCE_MAX_LENGTH = 2000;
 const QR_CODE_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const QR_CODE_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export type GroupSubmissionInput = {
   name?: FormDataEntryValue | null;
@@ -70,6 +75,10 @@ function isValidUrl(value: string): boolean {
 
 function isValidSlug(value: string): boolean {
   return SLUG_PATTERN.test(value);
+}
+
+function isUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
 }
 
 function isPlatform(value: string): value is Platform {
@@ -163,6 +172,59 @@ function submissionInputFromFormData(formData: FormData): GroupSubmissionInput {
   };
 }
 
+function buildSubmissionPayload({
+  categoryLabel,
+  categorySlug,
+  existingQrCodeStoragePath,
+  input,
+  joinMethodType,
+  qrCode,
+  qrUpload
+}: {
+  categoryLabel: string | null;
+  categorySlug: CategorySlug;
+  existingQrCodeStoragePath?: string;
+  input: GroupSubmissionInput;
+  joinMethodType: JoinMethodType;
+  qrCode: File | null;
+  qrUpload: Awaited<ReturnType<typeof uploadQrCode>>;
+}) {
+  const groupLink = text(input.groupLink);
+  const joinMethodValue = text(input.joinMethodValue);
+
+  return {
+    categorySlug,
+    categoryLabel,
+    shortDescription: text(input.shortDescription),
+    description: text(input.description),
+    language: text(input.language) || null,
+    region: text(input.region) || null,
+    rulesSummary: text(input.rulesSummary) || null,
+    joinMethod: {
+      type: joinMethodType,
+      value: joinMethodValue || null,
+      groupLink: groupLink || null,
+      qrCode: qrCode
+        ? {
+            name: qrCode.name,
+            type: qrCode.type,
+            size: qrCode.size,
+            storagePath: qrUpload.path,
+            uploadStatus: qrUpload.status
+          }
+        : existingQrCodeStoragePath
+          ? {
+              name: existingQrCodeStoragePath,
+              type: null,
+              size: null,
+              storagePath: existingQrCodeStoragePath,
+              uploadStatus: "uploaded"
+            }
+        : null
+    }
+  };
+}
+
 async function uploadQrCode({
   file,
   userId
@@ -240,29 +302,15 @@ export async function submitGroup(formData: FormData) {
     proposed_platform: platform,
     proposed_join_method: joinMethodType,
     proposed_join_value: groupLink || qrUpload.path || joinMethodValue || null,
-    proposed_payload: {
+    proposed_payload: buildSubmissionPayload({
+      categoryLabel: category ? getCategoryLabel(category.slug, locale) : null,
       categorySlug,
-      categoryLabel: category?.label ?? null,
-      shortDescription: text(input.shortDescription),
-      description: text(input.description),
-      language: text(input.language) || null,
-      region: text(input.region) || null,
-      rulesSummary: text(input.rulesSummary) || null,
-      joinMethod: {
-        type: joinMethodType,
-        value: joinMethodValue || null,
-        groupLink: groupLink || null,
-        qrCode: qrCode
-          ? {
-              name: qrCode.name,
-              type: qrCode.type,
-              size: qrCode.size,
-              storagePath: qrUpload.path,
-              uploadStatus: qrUpload.status
-            }
-          : null
-      }
-    },
+      existingQrCodeStoragePath: "",
+      input,
+      joinMethodType,
+      qrCode,
+      qrUpload
+    }),
     moderation_status: "pending",
     moderator_notes: null
   };
@@ -276,6 +324,87 @@ export async function submitGroup(formData: FormData) {
   }
 
   redirect(`/my-groups?lang=${locale}&submitted=1`);
+}
+
+export async function resubmitGroupSubmission(formData: FormData) {
+  "use server";
+
+  const { requireUser } = await import("../auth");
+  const input = submissionInputFromFormData(formData);
+  const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
+  const submissionId = text(formData.get("submissionId"));
+  const existingQrCodeStoragePath = text(formData.get("existingQrCodeStoragePath"));
+  const validationInput = existingQrCodeStoragePath
+    ? { ...input, joinMethodValue: input.joinMethodValue || existingQrCodeStoragePath }
+    : input;
+  const validation = validateGroupSubmission(validationInput);
+  const user = await requireUser({ lang: locale, next: "/my-groups" });
+
+  if (!isUuid(submissionId) || !validation.ok) {
+    redirect(`/my-groups?lang=${locale}&resubmit=validation`);
+  }
+
+  const name = text(input.name);
+  const platform = text(input.platform) as Platform;
+  const categorySlug = text(input.categorySlug) as CategorySlug;
+  const joinMethodType = text(input.joinMethodType) as JoinMethodType;
+  const joinMethodValue = text(input.joinMethodValue);
+  const groupLink = text(input.groupLink);
+  const qrCode = file(input.qrCode);
+  const category = categories.find((item) => item.slug === categorySlug);
+  const { createClient } = await import("../supabase/server");
+  const supabase = await createClient();
+  const qrUpload = qrCode
+    ? await uploadQrCode({ file: qrCode, userId: user.id })
+    : {
+        path: existingQrCodeStoragePath || null,
+        status: existingQrCodeStoragePath ? "uploaded" as const : "not_provided" as const
+      };
+
+  if (qrCode && qrUpload.status === "failed") {
+    redirect(`/my-groups?lang=${locale}&resubmit=error`);
+  }
+
+  const { data: categoryData } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", categorySlug)
+    .maybeSingle();
+  const categoryRow = categoryData as { id: string } | null;
+
+  const update: GroupSubmissionUpdate = {
+    category_id: categoryRow?.id ?? null,
+    proposed_name: name,
+    proposed_platform: platform,
+    proposed_join_method: joinMethodType,
+    proposed_join_value:
+      groupLink || qrUpload.path || joinMethodValue || existingQrCodeStoragePath || null,
+    proposed_payload: buildSubmissionPayload({
+      categoryLabel: category ? getCategoryLabel(category.slug, locale) : null,
+      categorySlug,
+      existingQrCodeStoragePath,
+      input,
+      joinMethodType,
+      qrCode,
+      qrUpload
+    }),
+    moderation_status: "pending",
+    moderator_notes: null,
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await supabase
+    .from("group_submissions")
+    .update(update as never)
+    .eq("id", submissionId)
+    .eq("submitter_id", user.id)
+    .eq("moderation_status", "changes_requested");
+
+  if (error) {
+    redirect(`/my-groups?lang=${locale}&resubmit=error`);
+  }
+
+  redirect(`/my-groups?lang=${locale}&resubmit=sent`);
 }
 
 export async function claimGroup(formData: FormData) {
