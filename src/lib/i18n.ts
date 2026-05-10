@@ -14,6 +14,12 @@ type Dictionary = {
     signIn: string;
     signOut: string;
   };
+  footer: {
+    label: string;
+    privacy: string;
+    tagline: string;
+    terms: string;
+  };
   home: {
     title: string;
     intro: string;
@@ -267,6 +273,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       english: "English",
       signIn: "登录",
       signOut: "退出"
+    },
+    footer: {
+      label: "页脚链接",
+      privacy: "隐私政策",
+      tagline: "趣群岛只展示审核通过的公开群组信息。",
+      terms: "使用条款"
     },
     home: {
       title: "发现真实活跃的兴趣群",
@@ -543,6 +555,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       english: "English",
       signIn: "Sign in",
       signOut: "Sign out"
+    },
+    footer: {
+      label: "Footer links",
+      privacy: "Privacy",
+      tagline: "Circlist lists only reviewed public community information.",
+      terms: "Terms"
     },
     home: {
       title: "Discover real, active communities",

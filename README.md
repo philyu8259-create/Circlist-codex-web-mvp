@@ -17,10 +17,11 @@ The app reads Supabase configuration from:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SITE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are required for browser/server access to Supabase-backed public data. `SUPABASE_SERVICE_ROLE_KEY` is for admin scripts only and must not be exposed to the browser.
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are required for browser/server access to Supabase-backed public data. `NEXT_PUBLIC_SITE_URL` should be the deployed public origin, for example `https://circlist.example.com`, so SEO metadata, sitemap, and auth links use the right URL. `SUPABASE_SERVICE_ROLE_KEY` is for admin scripts and server-only auth email generation only; it must not be exposed to the browser.
 
 For local preview, the public group catalog falls back to bundled sample data when the public Supabase env vars are not configured.
 
@@ -66,6 +67,24 @@ AUTH_EMAIL_REPLY_TO=
 When `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, and `SUPABASE_SERVICE_ROLE_KEY` are
 present, Circlist generates the Supabase magic link on the server and sends it
 through Resend. Otherwise it falls back to Supabase's default email provider.
+
+## Deployment Checklist
+
+Before opening the MVP to external users:
+
+1. Set these environment variables on the hosting platform:
+   `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `RESEND_API_KEY`, `AUTH_EMAIL_FROM`, and optionally
+   `AUTH_EMAIL_REPLY_TO`.
+2. In Supabase Auth URL settings, add the deployed origin and callback URLs:
+   `/auth/callback` and `/auth/confirm`.
+3. Apply migrations and seed the catalog:
+   `npx supabase db push`, then `npm run seed:samples`.
+4. Promote the first operator account:
+   `npm run admin:promote -- user@example.com`.
+5. Confirm `/privacy`, `/terms`, `/robots.txt`, and `/sitemap.xml` resolve on
+   the deployed domain.
 
 ## Bilingual Behavior
 
