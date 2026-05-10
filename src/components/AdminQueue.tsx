@@ -4,6 +4,7 @@ type AdminQueueProps = {
   title: string;
   description: string;
   status: string;
+  details?: { label: string; value: string }[];
   meta?: string;
   children?: ReactNode;
 };
@@ -12,6 +13,7 @@ export function AdminQueue({
   title,
   description,
   status,
+  details = [],
   meta,
   children
 }: AdminQueueProps) {
@@ -32,6 +34,18 @@ export function AdminQueue({
       </div>
 
       {meta ? <p className="mt-3 text-xs text-ink/45">{meta}</p> : null}
+      {details.length > 0 ? (
+        <dl className="mt-4 grid gap-2 rounded-md bg-paper px-3 py-3 text-xs sm:grid-cols-2">
+          {details.map((item) => (
+            <div className="min-w-0" key={`${item.label}:${item.value}`}>
+              <dt className="font-medium text-ink/45">{item.label}</dt>
+              <dd className="mt-1 break-words leading-5 text-ink/75">
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       {children ? <div className="mt-4 border-t border-ink/10 pt-4">{children}</div> : null}
     </article>
   );

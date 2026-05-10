@@ -9,6 +9,10 @@ import { getCurrentUser } from "@/lib/auth";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/request-locale";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import {
+  compactDetailItems,
+  parseSubmissionPayload
+} from "@/lib/submission-payload";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -19,6 +23,7 @@ type QueueItem = {
   title: string;
   description: string;
   status: string;
+  details?: { label: string; value: string }[];
   meta?: string;
 };
 
@@ -29,6 +34,7 @@ type SubmissionQueueRow = {
   proposed_join_method: string | null;
   proposed_join_value: string | null;
   proposed_payload: unknown;
+  submitter_id: string;
   moderation_status: string;
   created_at: string | null;
   categories: { slug: string | null; name_zh: string | null; name_en: string | null } | null;
@@ -75,32 +81,51 @@ function formatDate(value: string | null | undefined, locale: Locale): string {
   }).format(new Date(value));
 }
 
-function payloadObject(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function payloadText(payload: unknown, key: string): string {
-  const value = payloadObject(payload)[key];
-
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function formatSubmissionDescription(
   item: SubmissionQueueRow,
   locale: Locale
 ): string {
+  const payload = parseSubmissionPayload(item.proposed_payload);
   const category =
     locale === "en" ? item.categories?.name_en : item.categories?.name_zh;
   const parts = [
     item.proposed_platform,
     category ?? item.categories?.slug ?? "",
-    payloadText(item.proposed_payload, "shortDescription"),
+    payload.shortDescription,
     item.proposed_join_value ?? item.proposed_join_method ?? ""
   ].filter(Boolean);
 
   return parts.join(" · ");
+}
+
+function buildSubmissionDetails(
+  item: SubmissionQueueRow,
+  copy: ReturnType<typeof getDictionary>["admin"],
+  locale: Locale
+) {
+  const payload = parseSubmissionPayload(item.proposed_payload);
+  const category =
+    (locale === "en" ? item.categories?.name_en : item.categories?.name_zh) ??
+    payload.categoryLabel ??
+    item.categories?.slug ??
+    payload.categorySlug;
+  const qrCode =
+    payload.qrCodeName ||
+    payload.qrCodeStoragePath ||
+    payload.qrCodeUploadStatus;
+
+  return compactDetailItems([
+    { label: copy.submitterLabel, value: item.submitter_id.slice(0, 8) },
+    { label: copy.categoryLabel, value: category },
+    { label: copy.joinMethodLabel, value: item.proposed_join_method },
+    { label: copy.joinValueLabel, value: payload.joinMethodValue },
+    { label: copy.groupLinkLabel, value: payload.groupLink },
+    { label: copy.qrCodeLabel, value: qrCode },
+    { label: copy.languageLabel, value: payload.language },
+    { label: copy.regionLabel, value: payload.region },
+    { label: copy.descriptionLabel, value: payload.description },
+    { label: copy.rulesLabel, value: payload.rulesSummary }
+  ]);
 }
 
 async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
@@ -150,6 +175,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
           proposed_join_method,
           proposed_join_value,
           proposed_payload,
+          submitter_id,
           moderation_status,
           created_at,
           categories(slug, name_zh, name_en)
@@ -207,6 +233,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
         id: item.id,
         title: item.proposed_name,
         description: formatSubmissionDescription(item, locale),
+        details: buildSubmissionDetails(item, getDictionary(locale).admin, locale),
         status: item.moderation_status,
         meta: formatDate(item.created_at, locale)
       })),
@@ -444,6 +471,7 @@ export default async function AdminPage({
                 queues.submissions.map((item) => (
                   <AdminQueue
                     description={item.description}
+                    details={item.details}
                     key={item.id}
                     meta={item.meta}
                     status={`${copy.admin.statusLabel}: ${item.status}`}

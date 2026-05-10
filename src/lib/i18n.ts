@@ -107,6 +107,16 @@ type Dictionary = {
     submissionsTitle: string;
     claimsTitle: string;
     notes: string;
+    platformLabel: string;
+    categoryLabel: string;
+    joinMethodLabel: string;
+    joinValueLabel: string;
+    groupLinkLabel: string;
+    qrCodeLabel: string;
+    languageLabel: string;
+    regionLabel: string;
+    descriptionLabel: string;
+    rulesLabel: string;
   };
   admin: {
     title: string;
@@ -130,6 +140,16 @@ type Dictionary = {
     approve: string;
     reject: string;
     requestChanges: string;
+    categoryLabel: string;
+    submitterLabel: string;
+    joinMethodLabel: string;
+    joinValueLabel: string;
+    groupLinkLabel: string;
+    qrCodeLabel: string;
+    languageLabel: string;
+    regionLabel: string;
+    descriptionLabel: string;
+    rulesLabel: string;
     priorityTitle: string;
     priorityEmpty: string;
     workflowTitle: string;
@@ -338,7 +358,17 @@ const dictionaries: Record<Locale, Dictionary> = {
       authRequired: "登录后可以查看你提交和认领的群组。",
       submissionsTitle: "我的提交",
       claimsTitle: "我的认领",
-      notes: "审核备注"
+      notes: "审核备注",
+      platformLabel: "平台",
+      categoryLabel: "主题",
+      joinMethodLabel: "加入方式",
+      joinValueLabel: "加入说明",
+      groupLinkLabel: "群链接",
+      qrCodeLabel: "二维码",
+      languageLabel: "语言",
+      regionLabel: "地区",
+      descriptionLabel: "详细介绍",
+      rulesLabel: "群规摘要"
     },
     admin: {
       title: "审核队列",
@@ -362,6 +392,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       approve: "通过",
       reject: "拒绝",
       requestChanges: "要求修改",
+      categoryLabel: "主题",
+      submitterLabel: "提交人",
+      joinMethodLabel: "加入方式",
+      joinValueLabel: "加入说明",
+      groupLinkLabel: "群链接",
+      qrCodeLabel: "二维码",
+      languageLabel: "语言",
+      regionLabel: "地区",
+      descriptionLabel: "详细介绍",
+      rulesLabel: "群规摘要",
       priorityTitle: "今日优先处理",
       priorityEmpty: "当前没有积压事项，可以继续补充样本群或检查公开列表质量。",
       workflowTitle: "审核工作流",
@@ -596,7 +636,17 @@ const dictionaries: Record<Locale, Dictionary> = {
       authRequired: "Sign in to view groups you submitted or claimed.",
       submissionsTitle: "My submissions",
       claimsTitle: "My claims",
-      notes: "Reviewer notes"
+      notes: "Reviewer notes",
+      platformLabel: "Platform",
+      categoryLabel: "Topic",
+      joinMethodLabel: "Join method",
+      joinValueLabel: "Join notes",
+      groupLinkLabel: "Group link",
+      qrCodeLabel: "QR code",
+      languageLabel: "Language",
+      regionLabel: "Region",
+      descriptionLabel: "Description",
+      rulesLabel: "Rules summary"
     },
     admin: {
       title: "Review queues",
@@ -623,6 +673,16 @@ const dictionaries: Record<Locale, Dictionary> = {
       approve: "Approve",
       reject: "Reject",
       requestChanges: "Request changes",
+      categoryLabel: "Topic",
+      submitterLabel: "Submitter",
+      joinMethodLabel: "Join method",
+      joinValueLabel: "Join notes",
+      groupLinkLabel: "Group link",
+      qrCodeLabel: "QR code",
+      languageLabel: "Language",
+      regionLabel: "Region",
+      descriptionLabel: "Description",
+      rulesLabel: "Rules summary",
       priorityTitle: "Today priority",
       priorityEmpty:
         "No backlog right now. You can add more samples or review public listing quality.",

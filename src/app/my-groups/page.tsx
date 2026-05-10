@@ -3,6 +3,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/request-locale";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
+import type { Json } from "@/lib/supabase/types";
+import {
+  compactDetailItems,
+  parseSubmissionPayload
+} from "@/lib/submission-payload";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -12,9 +17,13 @@ type UserSubmission = {
   id: string;
   proposed_name: string;
   proposed_platform: string;
+  proposed_join_method: string | null;
+  proposed_join_value: string | null;
+  proposed_payload: Json;
   moderation_status: string;
   moderator_notes: string | null;
   created_at: string | null;
+  categories: { slug: string | null; name_zh: string | null; name_en: string | null } | null;
 };
 
 type UserClaim = {
@@ -71,7 +80,18 @@ async function getMyGroupData(): Promise<MyGroupData> {
       supabase
         .from("group_submissions")
         .select(
-          "id, proposed_name, proposed_platform, moderation_status, moderator_notes, created_at"
+          `
+          id,
+          proposed_name,
+          proposed_platform,
+          proposed_join_method,
+          proposed_join_value,
+          proposed_payload,
+          moderation_status,
+          moderator_notes,
+          created_at,
+          categories(slug, name_zh, name_en)
+        `
         )
         .eq("submitter_id", user.id)
         .order("created_at", { ascending: false })
@@ -131,6 +151,7 @@ export default async function MyGroupsPage({
     { label: copy.myGroups.needsUpdate, value: String(needsUpdateCount) }
   ];
   const hasRecords = data.submissions.length > 0 || data.claims.length > 0;
+  const myGroupsCopy = copy.myGroups;
 
   return (
     <>
@@ -184,6 +205,7 @@ export default async function MyGroupsPage({
               {data.submissions.map((item) => (
                 <RecordCard
                   description={item.proposed_platform}
+                  details={buildSubmissionDetails(item, myGroupsCopy, locale)}
                   key={item.id}
                   locale={locale}
                   notes={item.moderator_notes}
@@ -231,6 +253,7 @@ export default async function MyGroupsPage({
 function RecordCard({
   title,
   description,
+  details = [],
   status,
   timestamp,
   notes,
@@ -239,6 +262,7 @@ function RecordCard({
 }: {
   title: string;
   description: string;
+  details?: { label: string; value: string }[];
   status: string;
   timestamp: string | null;
   notes: string | null;
@@ -261,6 +285,18 @@ function RecordCard({
       {timestamp ? (
         <p className="mt-3 text-xs text-ink/45">{formatDate(timestamp, locale)}</p>
       ) : null}
+      {details.length > 0 ? (
+        <dl className="mt-4 grid gap-2 rounded-md bg-paper px-3 py-3 text-xs sm:grid-cols-2">
+          {details.map((item) => (
+            <div className="min-w-0" key={`${item.label}:${item.value}`}>
+              <dt className="font-medium text-ink/45">{item.label}</dt>
+              <dd className="mt-1 break-words leading-5 text-ink/75">
+                {item.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       {notes ? (
         <p className="mt-3 rounded-md bg-sky px-3 py-2 text-xs leading-5 text-ink/70">
           {notesLabel}: {notes}
@@ -268,4 +304,34 @@ function RecordCard({
       ) : null}
     </article>
   );
+}
+
+function buildSubmissionDetails(
+  item: UserSubmission,
+  copy: ReturnType<typeof getDictionary>["myGroups"],
+  locale: Locale
+) {
+  const payload = parseSubmissionPayload(item.proposed_payload);
+  const category =
+    (locale === "en" ? item.categories?.name_en : item.categories?.name_zh) ??
+    payload.categoryLabel ??
+    item.categories?.slug ??
+    payload.categorySlug;
+  const qrCode =
+    payload.qrCodeName ||
+    payload.qrCodeStoragePath ||
+    payload.qrCodeUploadStatus;
+
+  return compactDetailItems([
+    { label: copy.platformLabel, value: item.proposed_platform },
+    { label: copy.categoryLabel, value: category },
+    { label: copy.joinMethodLabel, value: item.proposed_join_method },
+    { label: copy.joinValueLabel, value: payload.joinMethodValue },
+    { label: copy.groupLinkLabel, value: payload.groupLink },
+    { label: copy.qrCodeLabel, value: qrCode },
+    { label: copy.languageLabel, value: payload.language },
+    { label: copy.regionLabel, value: payload.region },
+    { label: copy.descriptionLabel, value: payload.description },
+    { label: copy.rulesLabel, value: payload.rulesSummary }
+  ]);
 }
