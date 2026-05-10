@@ -80,6 +80,14 @@ type Dictionary = {
     language: string;
     region: string;
     rulesSummary: string;
+    basicsTitle: string;
+    basicsDescription: string;
+    joinTitle: string;
+    joinDescription: string;
+    reviewTitle: string;
+    reviewDescription: string;
+    checklistTitle: string;
+    checklistItems: string[];
     button: string;
     validationError: string;
     submitError: string;
@@ -293,6 +301,18 @@ const dictionaries: Record<Locale, Dictionary> = {
       language: "语言",
       region: "地区",
       rulesSummary: "群规摘要",
+      basicsTitle: "基础信息",
+      basicsDescription: "帮助用户快速判断这个群是否适合自己。",
+      joinTitle: "加入方式",
+      joinDescription: "至少提供一种加入入口，链接、二维码或管理员说明均可。",
+      reviewTitle: "审核补充",
+      reviewDescription: "这些信息会帮助审核员判断群组质量和展示方式。",
+      checklistTitle: "审核会重点看",
+      checklistItems: [
+        "加入入口是否真实可用",
+        "简介是否清楚说明群组主题",
+        "是否存在明显营销、诈骗或过期信息"
+      ],
       button: "提交审核",
       validationError: "请补全必填项后再提交。",
       submitError: "提交失败，请稍后重试。"
@@ -522,6 +542,21 @@ const dictionaries: Record<Locale, Dictionary> = {
       language: "Language",
       region: "Region",
       rulesSummary: "Rules summary",
+      basicsTitle: "Basic information",
+      basicsDescription:
+        "Help visitors quickly decide whether this community is relevant.",
+      joinTitle: "Join method",
+      joinDescription:
+        "Provide at least one path to join, such as a link, QR code, or admin instructions.",
+      reviewTitle: "Review details",
+      reviewDescription:
+        "These details help moderators judge quality and decide how to list the group.",
+      checklistTitle: "Review checks",
+      checklistItems: [
+        "The join path is real and usable",
+        "The description clearly explains the community topic",
+        "There is no obvious spam, scam, or outdated information"
+      ],
       button: "Submit for review",
       validationError: "Please complete the required fields before submitting.",
       submitError: "Submission failed. Please try again later."
