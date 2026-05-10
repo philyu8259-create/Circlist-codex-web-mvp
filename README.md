@@ -85,6 +85,16 @@ Before opening the MVP to external users:
    `npm run admin:promote -- user@example.com`.
 5. Confirm `/privacy`, `/terms`, `/robots.txt`, and `/sitemap.xml` resolve on
    the deployed domain.
+6. Deployment commands:
+   ```bash
+   npm run deploy      # preview deployment
+   npm run deploy:prod # production deployment
+   ```
+7. If CLI prompts for auth, run:
+   ```bash
+   npx vercel login
+   ```
+   then rerun step 6.
 
 ## Bilingual Behavior
 
