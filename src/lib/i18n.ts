@@ -159,6 +159,11 @@ type Dictionary = {
     batchSetPublished: string;
     batchSetNeedsUpdate: string;
     batchSetHidden: string;
+    batchSelectAll: string;
+    batchSelectedSummary: string;
+    batchConfirmTitle: string;
+    batchConfirmDescription: string;
+    batchNoSelection: string;
     batchUpdated: string;
     batchFailed: string;
     submissionsTitle: string;
@@ -457,6 +462,11 @@ const dictionaries: Record<Locale, Dictionary> = {
       batchSetPublished: "设为公开",
       batchSetNeedsUpdate: "标记需要更新",
       batchSetHidden: "批量下架",
+      batchSelectAll: "全选当前页",
+      batchSelectedSummary: "已选择 {count} 个",
+      batchConfirmTitle: "确认批量操作",
+      batchConfirmDescription: "确认将 {count} 个群组执行“{action}”？",
+      batchNoSelection: "请先选择至少一个群组。",
       batchUpdated: "批量状态已更新。",
       batchFailed: "批量操作失败，请先选择群组后重试。",
       submissionsTitle: "新群提交",
@@ -787,6 +797,12 @@ const dictionaries: Record<Locale, Dictionary> = {
       batchSetPublished: "Set published",
       batchSetNeedsUpdate: "Mark needs update",
       batchSetHidden: "Hide selected",
+      batchSelectAll: "Select all current page",
+      batchSelectedSummary: "{count} selected",
+      batchConfirmTitle: "Confirm batch action",
+      batchConfirmDescription:
+        "Apply \"{action}\" to {count} selected groups?",
+      batchNoSelection: "Select at least one group first.",
       batchUpdated: "Batch status updated.",
       batchFailed: "Batch action failed. Select groups and try again.",
       submissionsTitle: "New submissions",

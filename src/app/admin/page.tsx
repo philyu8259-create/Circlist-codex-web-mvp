@@ -1,4 +1,5 @@
 import { AppHeader } from "@/components/AppHeader";
+import { AdminBatchGroupForm } from "@/components/AdminBatchGroupForm";
 import { AdminQueue } from "@/components/AdminQueue";
 import { AdminReviewForm } from "@/components/AdminReviewForm";
 import { Pagination } from "@/components/Pagination";
@@ -726,83 +727,36 @@ export default async function AdminPage({
             </p>
 
             {queues.recentGroups.length > 0 ? (
-              <form action={batchUpdateAdminGroups} className="mt-4 grid gap-3">
-                <input name="lang" type="hidden" value={locale} />
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 bg-white px-3 py-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-ink">
-                      {copy.admin.batchActionTitle}
-                    </h3>
-                    <p className="mt-1 text-xs leading-5 text-ink/55">
-                      {copy.admin.batchActionDescription}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      className="min-h-9 rounded-md bg-leaf px-3 py-2 text-xs font-semibold text-white transition hover:bg-coral"
-                      name="batchStatus"
-                      type="submit"
-                      value="approved"
-                    >
-                      {copy.admin.batchSetPublished}
-                    </button>
-                    <button
-                      className="min-h-9 rounded-md border border-ink/15 px-3 py-2 text-xs font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
-                      name="batchStatus"
-                      type="submit"
-                      value="needs_update"
-                    >
-                      {copy.admin.batchSetNeedsUpdate}
-                    </button>
-                    <button
-                      className="min-h-9 rounded-md border border-coral/25 px-3 py-2 text-xs font-semibold text-coral transition hover:bg-coral/10"
-                      name="batchStatus"
-                      type="submit"
-                      value="suspended"
-                    >
-                      {copy.admin.batchSetHidden}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid gap-2">
-                  {queues.recentGroups.map((item) => (
-                    <div
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 px-3 py-3"
-                      key={item.id}
-                    >
-                      <label className="flex min-w-0 flex-1 items-start gap-3">
-                        <input
-                          className="mt-1 h-4 w-4 rounded border-ink/20 text-leaf focus:ring-leaf/30"
-                          name="groupIds"
-                          type="checkbox"
-                          value={item.id}
-                        />
-                        <span className="min-w-0">
-                          <span className="block font-semibold text-ink">
-                            {item.title}
-                          </span>
-                          <span className="mt-1 block text-xs leading-5 text-ink/55">
-                            {item.description}
-                            {item.meta ? ` · ${item.meta}` : ""}
-                          </span>
-                        </span>
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-md border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-leaf">
-                          {copyAdminGroupStatus(item.status, locale)}
-                        </span>
-                        <Link
-                          className="rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
-                          href={`/admin/groups/${item.id}/edit?lang=${locale}`}
-                        >
-                          {copy.admin.editGroup}
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
+              <AdminBatchGroupForm
+                action={batchUpdateAdminGroups}
+                items={queues.recentGroups.map((item) => ({
+                  description: item.meta
+                    ? `${item.description} · ${item.meta}`
+                    : item.description,
+                  id: item.id,
+                  status: item.status,
+                  title: item.title
+                }))}
+                labels={{
+                  batchActionDescription: copy.admin.batchActionDescription,
+                  batchActionTitle: copy.admin.batchActionTitle,
+                  batchConfirmDescription: copy.admin.batchConfirmDescription,
+                  batchConfirmTitle: copy.admin.batchConfirmTitle,
+                  batchNoSelection: copy.admin.batchNoSelection,
+                  batchSelectAll: copy.admin.batchSelectAll,
+                  batchSelectedSummary: copy.admin.batchSelectedSummary,
+                  batchSetHidden: copy.admin.batchSetHidden,
+                  batchSetNeedsUpdate: copy.admin.batchSetNeedsUpdate,
+                  batchSetPublished: copy.admin.batchSetPublished,
+                  editGroup: copy.admin.editGroup,
+                  statusLabels: {
+                    approved: copyAdminGroupStatus("approved", locale),
+                    needs_update: copyAdminGroupStatus("needs_update", locale),
+                    suspended: copyAdminGroupStatus("suspended", locale)
+                  }
+                }}
+                locale={locale}
+              >
                 <Pagination
                   locale={locale}
                   pageParam="groupPage"
@@ -810,7 +764,7 @@ export default async function AdminPage({
                   query={groupPaginationQuery}
                   state={queues.recentGroupPagination}
                 />
-              </form>
+              </AdminBatchGroupForm>
             ) : (
               <QueueEmpty message={copy.admin.emptyQueue} />
             )}
