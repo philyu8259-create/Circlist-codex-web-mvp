@@ -9,6 +9,7 @@ import {
   type ModerationStatus,
   type Platform
 } from "../domain";
+import { buildAdminAuditEvent } from "../admin-audit";
 import { hasSupabaseEnv } from "../supabase/env";
 import type { Database, Json } from "../supabase/types";
 
@@ -31,6 +32,9 @@ type GroupJoinMethodUpdate =
 type OwnershipClaimUpdate =
   Database["public"]["Tables"]["ownership_claims"]["Update"];
 type ReportUpdate = Database["public"]["Tables"]["reports"]["Update"];
+type SupabaseServerClient = Awaited<
+  ReturnType<typeof import("../supabase/server").createClient>
+>;
 
 const activityLevels = ["low", "medium", "high", "unknown"] as const;
 const prices = ["free", "paid", "unknown"] as const;
@@ -535,6 +539,32 @@ export async function requireAdmin() {
   return { user, supabase };
 }
 
+async function writeAdminAuditEvent({
+  action,
+  actorId,
+  entityId,
+  entityType,
+  metadata,
+  supabase
+}: {
+  action: Parameters<typeof buildAdminAuditEvent>[0]["action"];
+  actorId: string;
+  entityId: string | null;
+  entityType: string;
+  metadata?: Json;
+  supabase: SupabaseServerClient;
+}) {
+  await supabase.from("audit_events").insert(
+    buildAdminAuditEvent({
+      action,
+      actorId,
+      entityId,
+      entityType,
+      metadata
+    }) as never
+  );
+}
+
 async function resolveSubmissionCategoryId({
   categoryId,
   payload,
@@ -698,7 +728,7 @@ export async function reviewSubmission(formData: FormData) {
     redirect(`/admin?lang=${locale}&review=validation`);
   }
 
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   if (validation.decision === "approved") {
     const { data, error } = await supabase
@@ -734,6 +764,18 @@ export async function reviewSubmission(formData: FormData) {
       redirect(`/admin?lang=${locale}&review=error`);
     }
 
+    await writeAdminAuditEvent({
+      action: "review_submission",
+      actorId: user.id,
+      entityId: validation.submissionId,
+      entityType: "group_submissions",
+      metadata: {
+        decision: validation.decision,
+        reviewerNotesProvided: Boolean(validation.reviewerNotes)
+      },
+      supabase
+    });
+
     redirect(`/admin?lang=${locale}&review=updated`);
   }
 
@@ -752,6 +794,18 @@ export async function reviewSubmission(formData: FormData) {
     redirect(`/admin?lang=${locale}&review=error`);
   }
 
+  await writeAdminAuditEvent({
+    action: "review_submission",
+    actorId: user.id,
+    entityId: validation.submissionId,
+    entityType: "group_submissions",
+    metadata: {
+      decision: validation.decision,
+      reviewerNotesProvided: Boolean(validation.reviewerNotes)
+    },
+    supabase
+  });
+
   redirect(`/admin?lang=${locale}&review=updated`);
 }
 
@@ -769,7 +823,7 @@ export async function reviewOwnershipClaim(formData: FormData) {
     redirect(`/admin?lang=${locale}&review=validation`);
   }
 
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
   const update: OwnershipClaimUpdate = {
     claim_status: validation.decision,
     moderator_notes: validation.reviewerNotes,
@@ -821,6 +875,18 @@ export async function reviewOwnershipClaim(formData: FormData) {
     }
   }
 
+  await writeAdminAuditEvent({
+    action: "review_claim",
+    actorId: user.id,
+    entityId: validation.claimId,
+    entityType: "ownership_claims",
+    metadata: {
+      decision: validation.decision,
+      reviewerNotesProvided: Boolean(validation.reviewerNotes)
+    },
+    supabase
+  });
+
   redirect(`/admin?lang=${locale}&review=updated`);
 }
 
@@ -837,7 +903,7 @@ export async function reviewReport(formData: FormData) {
     redirect(`/admin?lang=${locale}&review=validation`);
   }
 
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
   const update: ReportUpdate = {
     status: validation.decision
   };
@@ -850,6 +916,17 @@ export async function reviewReport(formData: FormData) {
   if (error) {
     redirect(`/admin?lang=${locale}&review=error`);
   }
+
+  await writeAdminAuditEvent({
+    action: "review_report",
+    actorId: user.id,
+    entityId: validation.submissionId,
+    entityType: "reports",
+    metadata: {
+      decision: validation.decision
+    },
+    supabase
+  });
 
   redirect(`/admin?lang=${locale}&review=updated`);
 }
@@ -890,7 +967,7 @@ export async function updateAdminGroup(formData: FormData) {
     redirect(`/admin/groups/${text(formData.get("groupId"))}/edit?lang=${locale}&edit=validation`);
   }
 
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
   const { value } = validation;
   const { data: categoryData, error: categoryError } = await supabase
     .from("categories")
@@ -960,6 +1037,19 @@ export async function updateAdminGroup(formData: FormData) {
     redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=error`);
   }
 
+  await writeAdminAuditEvent({
+    action: "update_group",
+    actorId: user.id,
+    entityId: value.groupId,
+    entityType: "groups",
+    metadata: {
+      categorySlug: value.categorySlug,
+      joinMethodType: value.joinMethodType,
+      status: value.moderationStatus
+    },
+    supabase
+  });
+
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath(`/groups/${group.slug}`);
@@ -979,7 +1069,7 @@ export async function batchUpdateAdminGroups(formData: FormData) {
     redirect(`/admin?lang=${locale}&batch=validation`);
   }
 
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
   const now = new Date().toISOString();
   const { error: groupError } = await supabase
     .from("groups")
@@ -1004,6 +1094,19 @@ export async function batchUpdateAdminGroups(formData: FormData) {
   if (joinMethodError) {
     redirect(`/admin?lang=${locale}&batch=error`);
   }
+
+  await writeAdminAuditEvent({
+    action: "batch_update_groups",
+    actorId: user.id,
+    entityId: null,
+    entityType: "groups",
+    metadata: {
+      count: validation.groupIds.length,
+      groupIds: validation.groupIds,
+      status: validation.status
+    },
+    supabase
+  });
 
   revalidatePath("/");
   revalidatePath("/admin");

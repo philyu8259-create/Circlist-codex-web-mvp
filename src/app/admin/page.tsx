@@ -17,6 +17,10 @@ import {
   reviewReport,
   reviewSubmission
 } from "@/lib/actions/admin";
+import {
+  formatAdminAuditEvent,
+  type AdminAuditEventRow
+} from "@/lib/admin-audit";
 import { getCurrentUser } from "@/lib/auth";
 import {
   categories,
@@ -99,6 +103,7 @@ type AdminQueues = {
   submissions: QueueItem[];
   claims: QueueItem[];
   reports: QueueItem[];
+  auditEvents: QueueItem[];
   recentGroups: QueueItem[];
   recentGroupPagination: PaginationState<QueueItem>;
   recentGroupCount: number;
@@ -221,6 +226,7 @@ async function getAdminQueues(
     claims: [],
     reports: [],
     recentGroups: [],
+    auditEvents: [],
     recentGroupPagination: {
       currentPage: 1,
       endItem: 0,
@@ -311,7 +317,8 @@ async function getAdminQueues(
       claimsResult,
       reportsResult,
       groupsResult,
-      recentGroupsResult
+      recentGroupsResult,
+      auditEventsResult
     ] =
       await Promise.all([
         supabase.from("group_submissions").select(
@@ -354,7 +361,12 @@ async function getAdminQueues(
           .from("groups")
           .select("id", { count: "exact", head: true })
           .eq("moderation_status", "approved"),
-        managedGroupsQuery
+        managedGroupsQuery,
+        supabase
+          .from("audit_events")
+          .select("id, action, entity_type, entity_id, metadata, created_at")
+          .order("created_at", { ascending: false })
+          .limit(8)
       ]);
 
     const queryError =
@@ -362,7 +374,8 @@ async function getAdminQueues(
       claimsResult.error ||
       reportsResult.error ||
       groupsResult.error ||
-      recentGroupsResult.error;
+      recentGroupsResult.error ||
+      auditEventsResult.error;
 
     if (queryError) {
       return { ...emptyQueues, canLoadLive: true, liveUnavailable: true };
@@ -374,6 +387,8 @@ async function getAdminQueues(
     const reportRows = (reportsResult.data as ReportQueueRow[] | null) ?? [];
     const recentGroupRows =
       (recentGroupsResult.data as AdminGroupRow[] | null) ?? [];
+    const auditRows =
+      (auditEventsResult.data as AdminAuditEventRow[] | null) ?? [];
     const recentGroups = recentGroupRows.map((item) => ({
       id: item.id,
       title: item.name,
@@ -415,6 +430,17 @@ async function getAdminQueues(
         totalPages: recentGroupTotalPages
       },
       recentGroups,
+      auditEvents: auditRows.map((item) => {
+        const formatted = formatAdminAuditEvent(item, locale);
+
+        return {
+          id: formatted.id,
+          title: formatted.title,
+          description: formatted.description,
+          status: "",
+          meta: formatted.meta
+        };
+      }),
       submissions: submissionRows.map((item) => ({
         id: item.id,
         title: item.proposed_name,
@@ -951,6 +977,35 @@ export default async function AdminPage({
                 </li>
               ))}
             </ol>
+
+            <div className="mt-6 border-t border-ink/10 pt-5">
+              <h2 className="text-base font-semibold text-ink">
+                {copy.admin.auditTitle}
+              </h2>
+              {queues.auditEvents.length > 0 ? (
+                <ol className="mt-4 grid gap-3">
+                  {queues.auditEvents.map((event) => (
+                    <li
+                      className="rounded-md border border-ink/10 bg-paper px-3 py-2"
+                      key={event.id}
+                    >
+                      <span className="block text-sm font-semibold text-ink">
+                        {event.title}
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-ink/55">
+                        {[event.description, event.meta]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-ink/55">
+                  {copy.admin.auditEmpty}
+                </p>
+              )}
+            </div>
           </aside>
         </div>
       </main>

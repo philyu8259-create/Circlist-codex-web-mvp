@@ -204,6 +204,8 @@ type Dictionary = {
     priorityEmpty: string;
     workflowTitle: string;
     workflowItems: string[];
+    auditTitle: string;
+    auditEmpty: string;
     reviewed: string;
     reviewFailed: string;
   };
@@ -511,6 +513,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         "再处理认领请求，只给证据充分的群主开放维护权。",
         "最后处理举报和失效反馈，必要时下架或标记需要更新。"
       ],
+      auditTitle: "最近操作",
+      auditEmpty: "还没有后台操作记录。",
       reviewed: "审核状态已更新。",
       reviewFailed: "审核更新失败，请稍后重试。"
     },
@@ -850,6 +854,8 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Then review ownership claims and grant access only when evidence is clear.",
         "Finish with reports and invalid joins, marking outdated groups when needed."
       ],
+      auditTitle: "Recent activity",
+      auditEmpty: "No admin activity yet.",
       reviewed: "Review status updated.",
       reviewFailed: "Review update failed. Please try again later."
     },
