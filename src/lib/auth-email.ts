@@ -135,6 +135,23 @@ function buildConfirmationUrl({
   return confirmationUrl.toString();
 }
 
+function shouldFallbackToSupabase(error: unknown): boolean {
+  const message = (() => {
+    if (error && typeof error === "object" && "message" in error) {
+      return String(error.message).toLowerCase();
+    }
+
+    return String(error).toLowerCase();
+  })();
+
+  return (
+    message.includes("validation_error") ||
+    message.includes("only send testing emails") ||
+    message.includes("verify a domain") ||
+    message.includes("from address")
+  );
+}
+
 async function sendMagicLinkWithResend({
   email,
   locale,
@@ -220,8 +237,9 @@ async function sendMagicLinkWithSupabase({
 export async function sendMagicLinkEmail(
   input: MagicLinkEmailInput
 ): Promise<AuthEmailResult> {
+  const hasResendChannel = getAuthEmailChannel() === "resend";
   const sender =
-    getAuthEmailChannel() === "resend"
+    hasResendChannel
       ? sendMagicLinkWithResend
       : sendMagicLinkWithSupabase;
   let lastError: unknown = null;
@@ -232,6 +250,18 @@ export async function sendMagicLinkEmail(
     } catch (error) {
       lastError = error;
 
+      if (
+        hasResendChannel &&
+        classifyAuthError(error) === "error" &&
+        shouldFallbackToSupabase(error)
+      ) {
+        try {
+          return await sendMagicLinkWithSupabase(input);
+        } catch (fallbackError) {
+          lastError = fallbackError;
+        }
+      }
+
       if (classifyAuthError(error) !== "network") {
         break;
       }
@@ -239,9 +269,17 @@ export async function sendMagicLinkEmail(
   }
 
   const result = classifyAuthError(lastError);
+  const detail = lastError
+    ? String(
+        lastError && typeof lastError === "object" && "message" in lastError
+          ? lastError.message
+          : lastError
+      )
+    : "unknown";
   console.error("Magic link send failed", {
     channel: getAuthEmailChannel(),
     emailDomain: input.email.split("@")[1] ?? "unknown",
+    detail,
     result
   });
 
