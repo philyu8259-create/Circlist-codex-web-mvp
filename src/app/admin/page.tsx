@@ -11,6 +11,7 @@ import {
   type AdminGroupFilters
 } from "@/lib/admin-group-filters";
 import {
+  batchUpdateAdminGroups,
   reviewOwnershipClaim,
   reviewReport,
   reviewSubmission
@@ -500,6 +501,7 @@ export default async function AdminPage({
   const params = await searchParams;
   const locale = await getRequestLocale(firstParam(params?.lang));
   const review = firstParam(params?.review);
+  const batch = firstParam(params?.batch);
   const groupFilters = normalizeAdminGroupFilters(params);
   const hasGroupFilters = hasActiveAdminGroupFilters(groupFilters);
   const copy = getDictionary(locale);
@@ -601,6 +603,12 @@ export default async function AdminPage({
         {review ? (
           <StatusNotice tone={review === "updated" ? "success" : "error"}>
             {review === "updated" ? copy.admin.reviewed : copy.admin.reviewFailed}
+          </StatusNotice>
+        ) : null}
+
+        {batch ? (
+          <StatusNotice tone={batch === "updated" ? "success" : "error"}>
+            {batch === "updated" ? copy.admin.batchUpdated : copy.admin.batchFailed}
           </StatusNotice>
         ) : null}
 
@@ -718,32 +726,83 @@ export default async function AdminPage({
             </p>
 
             {queues.recentGroups.length > 0 ? (
-              <div className="mt-4 grid gap-2">
-                {queues.recentGroups.map((item) => (
-                  <div
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 px-3 py-3"
-                    key={item.id}
-                  >
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-ink">{item.title}</h3>
-                      <p className="mt-1 text-xs leading-5 text-ink/55">
-                        {item.description}
-                        {item.meta ? ` · ${item.meta}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-md border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-leaf">
-                        {copyAdminGroupStatus(item.status, locale)}
-                      </span>
-                      <Link
-                        className="rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
-                        href={`/admin/groups/${item.id}/edit?lang=${locale}`}
-                      >
-                        {copy.admin.editGroup}
-                      </Link>
-                    </div>
+              <form action={batchUpdateAdminGroups} className="mt-4 grid gap-3">
+                <input name="lang" type="hidden" value={locale} />
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 bg-white px-3 py-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-ink">
+                      {copy.admin.batchActionTitle}
+                    </h3>
+                    <p className="mt-1 text-xs leading-5 text-ink/55">
+                      {copy.admin.batchActionDescription}
+                    </p>
                   </div>
-                ))}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className="min-h-9 rounded-md bg-leaf px-3 py-2 text-xs font-semibold text-white transition hover:bg-coral"
+                      name="batchStatus"
+                      type="submit"
+                      value="approved"
+                    >
+                      {copy.admin.batchSetPublished}
+                    </button>
+                    <button
+                      className="min-h-9 rounded-md border border-ink/15 px-3 py-2 text-xs font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
+                      name="batchStatus"
+                      type="submit"
+                      value="needs_update"
+                    >
+                      {copy.admin.batchSetNeedsUpdate}
+                    </button>
+                    <button
+                      className="min-h-9 rounded-md border border-coral/25 px-3 py-2 text-xs font-semibold text-coral transition hover:bg-coral/10"
+                      name="batchStatus"
+                      type="submit"
+                      value="suspended"
+                    >
+                      {copy.admin.batchSetHidden}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-2">
+                  {queues.recentGroups.map((item) => (
+                    <div
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 px-3 py-3"
+                      key={item.id}
+                    >
+                      <label className="flex min-w-0 flex-1 items-start gap-3">
+                        <input
+                          className="mt-1 h-4 w-4 rounded border-ink/20 text-leaf focus:ring-leaf/30"
+                          name="groupIds"
+                          type="checkbox"
+                          value={item.id}
+                        />
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-ink">
+                            {item.title}
+                          </span>
+                          <span className="mt-1 block text-xs leading-5 text-ink/55">
+                            {item.description}
+                            {item.meta ? ` · ${item.meta}` : ""}
+                          </span>
+                        </span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-md border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-leaf">
+                          {copyAdminGroupStatus(item.status, locale)}
+                        </span>
+                        <Link
+                          className="rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
+                          href={`/admin/groups/${item.id}/edit?lang=${locale}`}
+                        >
+                          {copy.admin.editGroup}
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
                 <Pagination
                   locale={locale}
                   pageParam="groupPage"
@@ -751,7 +810,7 @@ export default async function AdminPage({
                   query={groupPaginationQuery}
                   state={queues.recentGroupPagination}
                 />
-              </div>
+              </form>
             ) : (
               <QueueEmpty message={copy.admin.emptyQueue} />
             )}

@@ -154,6 +154,13 @@ type Dictionary = {
     groupFilterButton: string;
     groupFilterClear: string;
     groupResultsSummary: (shown: number, total: number) => string;
+    batchActionTitle: string;
+    batchActionDescription: string;
+    batchSetPublished: string;
+    batchSetNeedsUpdate: string;
+    batchSetHidden: string;
+    batchUpdated: string;
+    batchFailed: string;
     submissionsTitle: string;
     submissionsDescription: string;
     claimsTitle: string;
@@ -445,6 +452,13 @@ const dictionaries: Record<Locale, Dictionary> = {
       groupFilterButton: "筛选",
       groupFilterClear: "清除",
       groupResultsSummary: (shown, total) => `显示 ${shown} 个，共 ${total} 个匹配群组`,
+      batchActionTitle: "批量操作",
+      batchActionDescription: "勾选本页群组后，可批量恢复公开、标记需要更新或下架。",
+      batchSetPublished: "设为公开",
+      batchSetNeedsUpdate: "标记需要更新",
+      batchSetHidden: "批量下架",
+      batchUpdated: "批量状态已更新。",
+      batchFailed: "批量操作失败，请先选择群组后重试。",
       submissionsTitle: "新群提交",
       submissionsDescription: "审核用户提交的新兴趣群和加入方式。",
       claimsTitle: "群主认领",
@@ -767,6 +781,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       groupFilterClear: "Clear",
       groupResultsSummary: (shown, total) =>
         `Showing ${shown} of ${total} matching groups`,
+      batchActionTitle: "Batch actions",
+      batchActionDescription:
+        "Select groups on this page, then publish, mark needs update, or hide them.",
+      batchSetPublished: "Set published",
+      batchSetNeedsUpdate: "Mark needs update",
+      batchSetHidden: "Hide selected",
+      batchUpdated: "Batch status updated.",
+      batchFailed: "Batch action failed. Select groups and try again.",
       submissionsTitle: "New submissions",
       submissionsDescription: "Review newly submitted communities and join paths.",
       claimsTitle: "Ownership claims",

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPublishedGroupSlug,
   inferJoinPolicy,
+  validateAdminGroupBatchUpdateInput,
   validateAdminGroupUpdateInput,
   validateReviewOwnershipClaimInput,
   validateReviewReportInput,
@@ -10,6 +11,7 @@ import {
 } from "../src/lib/actions/admin";
 
 const submissionId = "123e4567-e89b-12d3-a456-426614174000";
+const secondGroupId = "123e4567-e89b-12d3-a456-426614174001";
 
 describe("validateReviewSubmissionInput", () => {
   it("accepts approved, rejected, and changes_requested decisions", () => {
@@ -189,6 +191,39 @@ describe("validateAdminGroupUpdateInput", () => {
           "Moderation status is invalid.",
           "Join method target is invalid.",
           "Join method value must be a valid URL."
+        ])
+      );
+    }
+  });
+});
+
+describe("validateAdminGroupBatchUpdateInput", () => {
+  it("accepts selected groups and an editable status", () => {
+    expect(
+      validateAdminGroupBatchUpdateInput({
+        groupIds: [submissionId, secondGroupId],
+        status: "needs_update"
+      })
+    ).toEqual({
+      ok: true,
+      groupIds: [submissionId, secondGroupId],
+      status: "needs_update"
+    });
+  });
+
+  it("rejects empty selection, invalid ids, and unsupported status", () => {
+    const result = validateAdminGroupBatchUpdateInput({
+      groupIds: ["not-a-uuid"],
+      status: "draft"
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          "Select at least one group.",
+          "Group selection is invalid.",
+          "Batch status is invalid."
         ])
       );
     }

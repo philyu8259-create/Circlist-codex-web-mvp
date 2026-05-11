@@ -107,6 +107,10 @@ type AdminGroupUpdateInput = {
   joinMethodLabel?: FormDataEntryValue | null;
   joinMethodValue?: FormDataEntryValue | null;
 };
+type AdminGroupBatchUpdateInput = {
+  groupIds?: FormDataEntryValue[] | null;
+  status?: FormDataEntryValue | null;
+};
 
 type ReviewSubmissionValidation =
   | {
@@ -147,6 +151,13 @@ type AdminGroupUpdateValidation =
         shortDescription: string;
         suitableFor: string | null;
       };
+    }
+  | { ok: false; errors: string[] };
+type AdminGroupBatchUpdateValidation =
+  | {
+      ok: true;
+      groupIds: string[];
+      status: (typeof editableModerationStatuses)[number];
     }
   | { ok: false; errors: string[] };
 
@@ -424,6 +435,39 @@ export function validateAdminGroupUpdateInput(
       shortDescription,
       suitableFor: suitableFor || null
     }
+  };
+}
+
+export function validateAdminGroupBatchUpdateInput(
+  input: AdminGroupBatchUpdateInput
+): AdminGroupBatchUpdateValidation {
+  const groupIds = (input.groupIds ?? [])
+    .filter((value): value is string => typeof value === "string")
+    .map((value) => value.trim());
+  const validGroupIds = groupIds.filter(isUuid);
+  const status = text(input.status);
+  const errors: string[] = [];
+
+  if (validGroupIds.length === 0) {
+    errors.push("Select at least one group.");
+  }
+
+  if (validGroupIds.length !== groupIds.length) {
+    errors.push("Group selection is invalid.");
+  }
+
+  if (!isEditableModerationStatus(status)) {
+    errors.push("Batch status is invalid.");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  return {
+    ok: true,
+    groupIds: Array.from(new Set(validGroupIds)),
+    status: status as (typeof editableModerationStatuses)[number]
   };
 }
 
@@ -920,4 +964,51 @@ export async function updateAdminGroup(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath(`/groups/${group.slug}`);
   redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=updated`);
+}
+
+export async function batchUpdateAdminGroups(formData: FormData) {
+  "use server";
+
+  const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
+  const validation = validateAdminGroupBatchUpdateInput({
+    groupIds: formData.getAll("groupIds"),
+    status: formData.get("batchStatus")
+  });
+
+  if (!validation.ok) {
+    redirect(`/admin?lang=${locale}&batch=validation`);
+  }
+
+  const { supabase } = await requireAdmin();
+  const now = new Date().toISOString();
+  const { error: groupError } = await supabase
+    .from("groups")
+    .update({
+      moderation_status: validation.status,
+      updated_at: now
+    } as never)
+    .in("id", validation.groupIds);
+
+  if (groupError) {
+    redirect(`/admin?lang=${locale}&batch=error`);
+  }
+
+  const { error: joinMethodError } = await supabase
+    .from("group_join_methods")
+    .update({
+      review_status: validation.status === "approved" ? "approved" : "needs_update",
+      updated_at: now
+    } as never)
+    .in("group_id", validation.groupIds);
+
+  if (joinMethodError) {
+    redirect(`/admin?lang=${locale}&batch=error`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  validation.groupIds.forEach((id) => {
+    revalidatePath(`/admin/groups/${id}/edit`);
+  });
+  redirect(`/admin?lang=${locale}&batch=updated`);
 }
