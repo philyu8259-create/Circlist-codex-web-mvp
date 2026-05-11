@@ -9,13 +9,15 @@ describe("normalizeAdminGroupFilters", () => {
   it("accepts valid admin group search and filter params", () => {
     expect(
       normalizeAdminGroupFilters({
-        groupCategory: "investment",
-        groupPlatform: "telegram",
-        groupQuery: "  stocks  ",
-        groupStatus: "needs_update"
+      groupCategory: "investment",
+      groupPage: "3",
+      groupPlatform: "telegram",
+      groupQuery: "  stocks  ",
+      groupStatus: "needs_update"
       })
     ).toEqual({
       category: "investment",
+      page: 3,
       platform: "telegram",
       query: "stocks",
       status: "needs_update"
@@ -25,13 +27,15 @@ describe("normalizeAdminGroupFilters", () => {
   it("falls back to all filters when params are invalid", () => {
     expect(
       normalizeAdminGroupFilters({
-        groupCategory: "not-real",
-        groupPlatform: "pager",
-        groupQuery: "A".repeat(120),
-        groupStatus: "draft"
+      groupCategory: "not-real",
+      groupPage: "-2",
+      groupPlatform: "pager",
+      groupQuery: "A".repeat(120),
+      groupStatus: "draft"
       })
     ).toEqual({
       category: "all",
+      page: 1,
       platform: "all",
       query: "A".repeat(80),
       status: "all"

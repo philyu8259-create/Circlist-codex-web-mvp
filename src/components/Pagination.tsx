@@ -6,6 +6,7 @@ import type { PaginationState } from "@/lib/pagination";
 
 type PaginationProps = {
   locale: Locale;
+  pageParam?: string;
   pathname: string;
   query?: Record<string, string | undefined>;
   state: PaginationState<unknown>;
@@ -15,6 +16,7 @@ function pageHref(
   pathname: string,
   locale: Locale,
   page: number,
+  pageParam: string,
   query: Record<string, string | undefined> = {}
 ): string {
   const params = new URLSearchParams();
@@ -25,7 +27,7 @@ function pageHref(
   });
 
   if (page > 1) {
-    params.set("page", String(page));
+    params.set(pageParam, String(page));
   }
 
   return `${pathname}?${params.toString()}`;
@@ -40,6 +42,7 @@ function pageNumbers(currentPage: number, totalPages: number): number[] {
 
 export function Pagination({
   locale,
+  pageParam = "page",
   pathname,
   query,
   state
@@ -73,7 +76,7 @@ export function Pagination({
               ? "pointer-events-none border-ink/10 text-ink/35"
               : "border-ink/15 text-ink hover:border-leaf/40 hover:text-leaf"
           }`}
-          href={pageHref(pathname, locale, previousPage, query)}
+          href={pageHref(pathname, locale, previousPage, pageParam, query)}
         >
           {copy.pagination.previous}
         </Link>
@@ -81,7 +84,7 @@ export function Pagination({
         {pages[0] > 1 ? (
           <Link
             className="rounded-md border border-ink/15 px-3 py-2 text-sm font-medium text-ink transition hover:border-leaf/40 hover:text-leaf"
-            href={pageHref(pathname, locale, 1, query)}
+            href={pageHref(pathname, locale, 1, pageParam, query)}
           >
             1
           </Link>
@@ -96,7 +99,7 @@ export function Pagination({
                 ? "border-leaf bg-leaf text-white"
                 : "border-ink/15 text-ink hover:border-leaf/40 hover:text-leaf"
             }`}
-            href={pageHref(pathname, locale, page, query)}
+            href={pageHref(pathname, locale, page, pageParam, query)}
             key={page}
           >
             {page}
@@ -109,7 +112,7 @@ export function Pagination({
         {pages.at(-1)! < state.totalPages ? (
           <Link
             className="rounded-md border border-ink/15 px-3 py-2 text-sm font-medium text-ink transition hover:border-leaf/40 hover:text-leaf"
-            href={pageHref(pathname, locale, state.totalPages, query)}
+            href={pageHref(pathname, locale, state.totalPages, pageParam, query)}
           >
             {state.totalPages}
           </Link>
@@ -122,7 +125,7 @@ export function Pagination({
               ? "pointer-events-none border-ink/10 text-ink/35"
               : "border-ink/15 text-ink hover:border-leaf/40 hover:text-leaf"
           }`}
-          href={pageHref(pathname, locale, nextPage, query)}
+          href={pageHref(pathname, locale, nextPage, pageParam, query)}
         >
           {copy.pagination.next}
         </Link>

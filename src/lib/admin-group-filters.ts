@@ -1,4 +1,7 @@
 import { categories, platforms, type CategorySlug, type Platform } from "./domain";
+import { parsePageParam } from "./pagination";
+
+export const ADMIN_GROUPS_PER_PAGE = 10;
 
 export const adminGroupStatuses = [
   "approved",
@@ -12,6 +15,7 @@ export type AdminGroupStatusFilter =
 
 export type AdminGroupFilters = {
   category: "all" | CategorySlug;
+  page: number;
   platform: "all" | Platform;
   query: string;
   status: AdminGroupStatusFilter;
@@ -46,9 +50,11 @@ export function normalizeAdminGroupFilters(
   const status = firstValue(input?.groupStatus);
   const category = firstValue(input?.groupCategory);
   const platform = firstValue(input?.groupPlatform);
+  const page = parsePageParam(firstValue(input?.groupPage));
 
   return {
     category: isCategorySlug(category) ? category : "all",
+    page,
     platform: isPlatform(platform) ? platform : "all",
     query,
     status: isStatus(status) ? status : "all"

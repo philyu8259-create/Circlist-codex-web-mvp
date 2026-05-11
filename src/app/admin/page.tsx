@@ -1,8 +1,10 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AdminQueue } from "@/components/AdminQueue";
 import { AdminReviewForm } from "@/components/AdminReviewForm";
+import { Pagination } from "@/components/Pagination";
 import Link from "next/link";
 import {
+  ADMIN_GROUPS_PER_PAGE,
   adminGroupStatuses,
   hasActiveAdminGroupFilters,
   normalizeAdminGroupFilters,
@@ -21,6 +23,7 @@ import {
   platforms
 } from "@/lib/domain";
 import { getDictionary, type Locale } from "@/lib/i18n";
+import type { PaginationState } from "@/lib/pagination";
 import { getRequestLocale } from "@/lib/request-locale";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
 import {
@@ -95,6 +98,7 @@ type AdminQueues = {
   claims: QueueItem[];
   reports: QueueItem[];
   recentGroups: QueueItem[];
+  recentGroupPagination: PaginationState<QueueItem>;
   recentGroupCount: number;
   pendingSubmissionCount: number;
   pendingClaimCount: number;
@@ -215,6 +219,15 @@ async function getAdminQueues(
     claims: [],
     reports: [],
     recentGroups: [],
+    recentGroupPagination: {
+      currentPage: 1,
+      endItem: 0,
+      items: [],
+      pageSize: ADMIN_GROUPS_PER_PAGE,
+      startItem: 0,
+      totalItems: 0,
+      totalPages: 1
+    },
     recentGroupCount: 0,
     pendingSubmissionCount: 0,
     pendingClaimCount: 0,
@@ -248,6 +261,8 @@ async function getAdminQueues(
       return emptyQueues;
     }
 
+    const groupStart = (groupFilters.page - 1) * ADMIN_GROUPS_PER_PAGE;
+    const groupEnd = groupStart + ADMIN_GROUPS_PER_PAGE - 1;
     let managedGroupsQuery = supabase
       .from("groups")
       .select(
@@ -255,7 +270,7 @@ async function getAdminQueues(
         { count: "exact" }
       )
       .order("updated_at", { ascending: false, nullsFirst: false })
-      .limit(20);
+      .range(groupStart, groupEnd);
 
     if (groupFilters.status === "all") {
       managedGroupsQuery = managedGroupsQuery.in("moderation_status", [
@@ -357,6 +372,28 @@ async function getAdminQueues(
     const reportRows = (reportsResult.data as ReportQueueRow[] | null) ?? [];
     const recentGroupRows =
       (recentGroupsResult.data as AdminGroupRow[] | null) ?? [];
+    const recentGroups = recentGroupRows.map((item) => ({
+      id: item.id,
+      title: item.name,
+      description: [item.platform, firstCategorySlug(item.categories), `/groups/${item.slug}`]
+        .filter(Boolean)
+        .join(" · "),
+      status: item.moderation_status,
+      meta: formatDate(item.updated_at, locale)
+    }));
+    const recentGroupCount = recentGroupsResult.count ?? recentGroupRows.length;
+    const recentGroupTotalPages = Math.max(
+      1,
+      Math.ceil(recentGroupCount / ADMIN_GROUPS_PER_PAGE)
+    );
+    const recentGroupCurrentPage = Math.min(
+      Math.max(groupFilters.page, 1),
+      recentGroupTotalPages
+    );
+    const recentGroupStartItem =
+      recentGroupCount === 0
+        ? 0
+        : (recentGroupCurrentPage - 1) * ADMIN_GROUPS_PER_PAGE + 1;
 
     return {
       canLoadLive: true,
@@ -365,16 +402,17 @@ async function getAdminQueues(
       pendingClaimCount: claimsResult.count ?? claimRows.length,
       pendingReportCount: reportsResult.count ?? reportRows.length,
       publishedGroupCount: groupsResult.count ?? 0,
-      recentGroupCount: recentGroupsResult.count ?? recentGroupRows.length,
-      recentGroups: recentGroupRows.map((item) => ({
-        id: item.id,
-        title: item.name,
-        description: [item.platform, firstCategorySlug(item.categories), `/groups/${item.slug}`]
-          .filter(Boolean)
-          .join(" · "),
-        status: item.moderation_status,
-        meta: formatDate(item.updated_at, locale)
-      })),
+      recentGroupCount,
+      recentGroupPagination: {
+        currentPage: recentGroupCurrentPage,
+        endItem: recentGroupStartItem + recentGroups.length - 1,
+        items: recentGroups,
+        pageSize: ADMIN_GROUPS_PER_PAGE,
+        startItem: recentGroupStartItem,
+        totalItems: recentGroupCount,
+        totalPages: recentGroupTotalPages
+      },
+      recentGroups,
       submissions: submissionRows.map((item) => ({
         id: item.id,
         title: item.proposed_name,
@@ -502,6 +540,14 @@ export default async function AdminPage({
       value: queues.canLoadLive ? String(queues.publishedGroupCount) : "-"
     }
   ];
+  const groupPaginationQuery = {
+    groupCategory:
+      groupFilters.category === "all" ? undefined : groupFilters.category,
+    groupPlatform:
+      groupFilters.platform === "all" ? undefined : groupFilters.platform,
+    groupQuery: groupFilters.query || undefined,
+    groupStatus: groupFilters.status === "all" ? undefined : groupFilters.status
+  };
 
   return (
     <>
@@ -698,6 +744,13 @@ export default async function AdminPage({
                     </div>
                   </div>
                 ))}
+                <Pagination
+                  locale={locale}
+                  pageParam="groupPage"
+                  pathname="/admin"
+                  query={groupPaginationQuery}
+                  state={queues.recentGroupPagination}
+                />
               </div>
             ) : (
               <QueueEmpty message={copy.admin.emptyQueue} />
