@@ -143,12 +143,24 @@ function shouldFallbackToSupabase(error: unknown): boolean {
 
     return String(error).toLowerCase();
   })();
+  const statusMatch = message.match(/resend email failed:\s*(\d{3})/);
+  const statusCode = statusMatch ? Number.parseInt(statusMatch[1], 10) : null;
+
+  if (statusCode && statusCode >= 400 && statusCode < 500 && statusCode !== 429) {
+    return true;
+  }
 
   return (
     message.includes("validation_error") ||
     message.includes("only send testing emails") ||
     message.includes("verify a domain") ||
-    message.includes("from address")
+    message.includes("from address") ||
+    message.includes("invalid api key") ||
+    message.includes("invalid api") ||
+    message.includes("unauthorized") ||
+    message.includes("forbidden") ||
+    message.includes("invalid token") ||
+    message.includes("access denied")
   );
 }
 
