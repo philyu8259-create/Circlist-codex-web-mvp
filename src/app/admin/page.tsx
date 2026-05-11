@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AdminQueue } from "@/components/AdminQueue";
+import { AdminReviewForm } from "@/components/AdminReviewForm";
 import {
   reviewOwnershipClaim,
   reviewReport,
@@ -42,6 +43,7 @@ type SubmissionQueueRow = {
 
 type ClaimQueueRow = {
   id: string;
+  claimant_id: string;
   claim_status: string;
   evidence: string;
   created_at: string | null;
@@ -50,10 +52,19 @@ type ClaimQueueRow = {
 
 type ReportQueueRow = {
   id: string;
+  group_id: string | null;
+  join_method_id: string | null;
+  reporter_id: string | null;
   report_type: string;
   details: string | null;
   status: string;
   created_at: string | null;
+  groups: { name: string | null; slug: string | null } | null;
+  group_join_methods: {
+    label: string | null;
+    type: string | null;
+    value: string | null;
+  } | null;
 };
 
 type AdminQueues = {
@@ -128,6 +139,38 @@ function buildSubmissionDetails(
   ]);
 }
 
+function buildClaimDetails(
+  item: ClaimQueueRow,
+  copy: ReturnType<typeof getDictionary>["admin"]
+) {
+  return compactDetailItems([
+    {
+      label: copy.groupLabel,
+      value: item.groups?.name ?? item.groups?.slug ?? ""
+    },
+    { label: copy.claimantLabel, value: item.claimant_id.slice(0, 8) },
+    { label: copy.descriptionLabel, value: item.evidence }
+  ]);
+}
+
+function buildReportDetails(
+  item: ReportQueueRow,
+  copy: ReturnType<typeof getDictionary>["admin"],
+  locale: Locale
+) {
+  return compactDetailItems([
+    {
+      label: copy.groupLabel,
+      value: item.groups?.name ?? item.groups?.slug ?? item.group_id
+    },
+    { label: copy.reporterLabel, value: item.reporter_id?.slice(0, 8) },
+    { label: copy.reportTypeLabel, value: copyReportType(item.report_type, locale) },
+    { label: copy.joinMethodLabel, value: item.group_join_methods?.label },
+    { label: copy.joinValueLabel, value: item.group_join_methods?.value },
+    { label: copy.descriptionLabel, value: item.details }
+  ]);
+}
+
 async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
   const emptyQueues: AdminQueues = {
     submissions: [],
@@ -187,17 +230,19 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
           .limit(10),
         supabase
           .from("ownership_claims")
-          .select("id, claim_status, evidence, created_at, groups(name, slug)", {
-            count: "exact"
-          })
+          .select(
+            "id, claimant_id, claim_status, evidence, created_at, groups(name, slug)",
+            { count: "exact" }
+          )
           .eq("claim_status", "pending")
           .order("created_at", { ascending: true })
           .limit(10),
         supabase
           .from("reports")
-          .select("id, report_type, details, status, created_at", {
-            count: "exact"
-          })
+          .select(
+            "id, group_id, join_method_id, reporter_id, report_type, details, status, created_at, groups(name, slug), group_join_methods(label, type, value)",
+            { count: "exact" }
+          )
           .eq("status", "pending")
           .order("created_at", { ascending: true })
           .limit(10),
@@ -241,6 +286,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
         id: item.id,
         title: item.groups?.name ?? item.groups?.slug ?? item.id,
         description: item.evidence,
+        details: buildClaimDetails(item, getDictionary(locale).admin),
         status: item.claim_status,
         meta: formatDate(item.created_at, locale)
       })),
@@ -248,6 +294,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
         id: item.id,
         title: copyReportType(item.report_type, locale),
         description: item.details ?? item.report_type,
+        details: buildReportDetails(item, getDictionary(locale).admin, locale),
         status: item.status,
         meta: formatDate(item.created_at, locale)
       }))
@@ -263,49 +310,6 @@ function copyReportType(value: string, locale: Locale): string {
   return value in dictionary.reportTypes
     ? dictionary.reportTypes[value as keyof typeof dictionary.reportTypes]
     : value;
-}
-
-function ReviewButtons({
-  approveLabel,
-  rejectLabel,
-  requestChangesLabel,
-  showRequestChanges = true
-}: {
-  approveLabel: string;
-  rejectLabel: string;
-  requestChangesLabel: string;
-  showRequestChanges?: boolean;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        className="rounded-md bg-leaf px-3 py-2 text-xs font-semibold text-white transition hover:bg-leaf/85"
-        name="decision"
-        type="submit"
-        value="approved"
-      >
-        {approveLabel}
-      </button>
-      <button
-        className="rounded-md bg-coral px-3 py-2 text-xs font-semibold text-white transition hover:bg-coral/85"
-        name="decision"
-        type="submit"
-        value="rejected"
-      >
-        {rejectLabel}
-      </button>
-      {showRequestChanges ? (
-        <button
-          className="rounded-md border border-ink/15 px-3 py-2 text-xs font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
-          name="decision"
-          type="submit"
-          value="changes_requested"
-        >
-          {requestChangesLabel}
-        </button>
-      ) : null}
-    </div>
-  );
 }
 
 function QueueEmpty({ message }: { message: string }) {
@@ -472,25 +476,40 @@ export default async function AdminPage({
                   <AdminQueue
                     description={item.description}
                     details={item.details}
+                    detailsTitle={copy.admin.detailsTitle}
                     key={item.id}
                     meta={item.meta}
                     status={`${copy.admin.statusLabel}: ${item.status}`}
                     title={item.title}
                   >
-                    <form action={reviewSubmission} className="grid gap-3">
-                      <input name="lang" type="hidden" value={locale} />
-                      <input name="submissionId" type="hidden" value={item.id} />
-                      <textarea
-                        className="min-h-20 rounded-md border border-ink/15 px-3 py-2 text-sm outline-none transition focus:border-leaf"
-                        name="reviewerNotes"
-                        placeholder={copy.admin.reviewerNotes}
-                      />
-                      <ReviewButtons
-                        approveLabel={copy.admin.approve}
-                        rejectLabel={copy.admin.reject}
-                        requestChangesLabel={copy.admin.requestChanges}
-                      />
-                    </form>
+                    <AdminReviewForm
+                      action={reviewSubmission}
+                      decisions={[
+                        {
+                          confirmMessage: copy.admin.approveConfirm,
+                          label: copy.admin.approve,
+                          tone: "approve",
+                          value: "approved"
+                        },
+                        {
+                          confirmMessage: copy.admin.rejectConfirm,
+                          label: copy.admin.reject,
+                          tone: "reject",
+                          value: "rejected"
+                        },
+                        {
+                          confirmMessage: copy.admin.requestChangesConfirm,
+                          label: copy.admin.requestChanges,
+                          tone: "neutral",
+                          value: "changes_requested"
+                        }
+                      ]}
+                      entityFieldName="submissionId"
+                      entityId={item.id}
+                      locale={locale}
+                      reviewerNotesLabel={copy.admin.reviewerNotesLabel}
+                      reviewerNotesPlaceholder={copy.admin.reviewerNotes}
+                    />
                   </AdminQueue>
                 ))
               ) : (
@@ -513,26 +532,35 @@ export default async function AdminPage({
                   queues.claims.map((item) => (
                     <AdminQueue
                       description={item.description}
+                      details={item.details}
+                      detailsTitle={copy.admin.detailsTitle}
                       key={item.id}
                       meta={item.meta}
                       status={`${copy.admin.statusLabel}: ${item.status}`}
                       title={item.title}
                     >
-                      <form action={reviewOwnershipClaim} className="grid gap-3">
-                        <input name="lang" type="hidden" value={locale} />
-                        <input name="claimId" type="hidden" value={item.id} />
-                        <textarea
-                          className="min-h-20 rounded-md border border-ink/15 px-3 py-2 text-sm outline-none transition focus:border-leaf"
-                          name="reviewerNotes"
-                          placeholder={copy.admin.reviewerNotes}
-                        />
-                        <ReviewButtons
-                          approveLabel={copy.admin.approve}
-                          rejectLabel={copy.admin.reject}
-                          requestChangesLabel={copy.admin.requestChanges}
-                          showRequestChanges={false}
-                        />
-                      </form>
+                      <AdminReviewForm
+                        action={reviewOwnershipClaim}
+                        decisions={[
+                          {
+                            confirmMessage: copy.admin.approveConfirm,
+                            label: copy.admin.approve,
+                            tone: "approve",
+                            value: "approved"
+                          },
+                          {
+                            confirmMessage: copy.admin.rejectConfirm,
+                            label: copy.admin.reject,
+                            tone: "reject",
+                            value: "rejected"
+                          }
+                        ]}
+                        entityFieldName="claimId"
+                        entityId={item.id}
+                        locale={locale}
+                        reviewerNotesLabel={copy.admin.reviewerNotesLabel}
+                        reviewerNotesPlaceholder={copy.admin.reviewerNotes}
+                      />
                     </AdminQueue>
                   ))
                 ) : (
@@ -554,20 +582,40 @@ export default async function AdminPage({
                   queues.reports.map((item) => (
                     <AdminQueue
                       description={item.description}
+                      details={item.details}
+                      detailsTitle={copy.admin.detailsTitle}
                       key={item.id}
                       meta={item.meta}
                       status={`${copy.admin.statusLabel}: ${item.status}`}
                       title={item.title}
                     >
-                      <form action={reviewReport} className="grid gap-3">
-                        <input name="lang" type="hidden" value={locale} />
-                        <input name="reportId" type="hidden" value={item.id} />
-                        <ReviewButtons
-                          approveLabel={copy.admin.approve}
-                          rejectLabel={copy.admin.reject}
-                          requestChangesLabel={copy.admin.requestChanges}
-                        />
-                      </form>
+                      <AdminReviewForm
+                        action={reviewReport}
+                        decisions={[
+                          {
+                            confirmMessage: copy.admin.resolveReportConfirm,
+                            label: copy.admin.resolveReport,
+                            tone: "approve",
+                            value: "approved"
+                          },
+                          {
+                            confirmMessage: copy.admin.dismissReportConfirm,
+                            label: copy.admin.dismissReport,
+                            tone: "reject",
+                            value: "rejected"
+                          },
+                          {
+                            confirmMessage: copy.admin.requestChangesConfirm,
+                            label: copy.admin.requestChanges,
+                            tone: "neutral",
+                            value: "changes_requested"
+                          }
+                        ]}
+                        entityFieldName="reportId"
+                        entityId={item.id}
+                        locale={locale}
+                        showReviewerNotes={false}
+                      />
                     </AdminQueue>
                   ))
                 ) : (

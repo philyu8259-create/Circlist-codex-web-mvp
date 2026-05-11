@@ -5,15 +5,27 @@ type AdminQueueProps = {
   description: string;
   status: string;
   details?: { label: string; value: string }[];
+  detailsTitle?: string;
   meta?: string;
   children?: ReactNode;
 };
+
+function isHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export function AdminQueue({
   title,
   description,
   status,
   details = [],
+  detailsTitle,
   meta,
   children
 }: AdminQueueProps) {
@@ -35,16 +47,35 @@ export function AdminQueue({
 
       {meta ? <p className="mt-3 text-xs text-ink/45">{meta}</p> : null}
       {details.length > 0 ? (
-        <dl className="mt-4 grid gap-2 rounded-md bg-paper px-3 py-3 text-xs sm:grid-cols-2">
-          {details.map((item) => (
-            <div className="min-w-0" key={`${item.label}:${item.value}`}>
-              <dt className="font-medium text-ink/45">{item.label}</dt>
-              <dd className="mt-1 break-words leading-5 text-ink/75">
-                {item.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <details
+          className="mt-4 rounded-md bg-paper px-3 py-3 text-xs"
+          open
+        >
+          <summary className="cursor-pointer select-none font-semibold text-ink/60">
+            {detailsTitle}
+          </summary>
+          <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+            {details.map((item) => (
+              <div className="min-w-0" key={`${item.label}:${item.value}`}>
+                <dt className="font-medium text-ink/45">{item.label}</dt>
+                <dd className="mt-1 break-words leading-5 text-ink/75">
+                  {isHttpUrl(item.value) ? (
+                    <a
+                      className="font-medium text-leaf underline-offset-2 hover:underline"
+                      href={item.value}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {item.value}
+                    </a>
+                  ) : (
+                    item.value
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </details>
       ) : null}
       {children ? <div className="mt-4 border-t border-ink/10 pt-4">{children}</div> : null}
     </article>

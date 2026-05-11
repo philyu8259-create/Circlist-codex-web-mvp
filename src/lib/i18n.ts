@@ -151,11 +151,24 @@ type Dictionary = {
     reportsDescription: string;
     statusLabel: string;
     reviewerNotes: string;
+    reviewerNotesLabel: string;
+    detailsTitle: string;
     approve: string;
     reject: string;
     requestChanges: string;
+    resolveReport: string;
+    dismissReport: string;
+    approveConfirm: string;
+    rejectConfirm: string;
+    requestChangesConfirm: string;
+    resolveReportConfirm: string;
+    dismissReportConfirm: string;
     categoryLabel: string;
     submitterLabel: string;
+    claimantLabel: string;
+    reporterLabel: string;
+    groupLabel: string;
+    reportTypeLabel: string;
     joinMethodLabel: string;
     joinValueLabel: string;
     groupLinkLabel: string;
@@ -418,11 +431,24 @@ const dictionaries: Record<Locale, Dictionary> = {
       reportsDescription: "处理加入方式失效、过期信息和风险举报。",
       statusLabel: "状态",
       reviewerNotes: "审核备注",
+      reviewerNotesLabel: "审核备注",
+      detailsTitle: "查看详情",
       approve: "通过",
       reject: "拒绝",
       requestChanges: "要求修改",
+      resolveReport: "已处理",
+      dismissReport: "驳回反馈",
+      approveConfirm: "确认通过这条提交？通过后会发布到公开列表。",
+      rejectConfirm: "确认拒绝这条记录？",
+      requestChangesConfirm: "确认要求提交者修改？",
+      resolveReportConfirm: "确认将这条反馈标记为已处理？",
+      dismissReportConfirm: "确认驳回这条反馈？",
       categoryLabel: "主题",
       submitterLabel: "提交人",
+      claimantLabel: "认领人",
+      reporterLabel: "反馈人",
+      groupLabel: "群组",
+      reportTypeLabel: "反馈类型",
       joinMethodLabel: "加入方式",
       joinValueLabel: "加入说明",
       groupLinkLabel: "群链接",
@@ -715,11 +741,25 @@ const dictionaries: Record<Locale, Dictionary> = {
         "Handle expired join methods, outdated details, and safety reports.",
       statusLabel: "Status",
       reviewerNotes: "Reviewer notes",
+      reviewerNotesLabel: "Reviewer notes",
+      detailsTitle: "View details",
       approve: "Approve",
       reject: "Reject",
       requestChanges: "Request changes",
+      resolveReport: "Mark handled",
+      dismissReport: "Dismiss report",
+      approveConfirm:
+        "Approve this submission? It will be published to the public directory.",
+      rejectConfirm: "Reject this item?",
+      requestChangesConfirm: "Ask the submitter to make changes?",
+      resolveReportConfirm: "Mark this report as handled?",
+      dismissReportConfirm: "Dismiss this report?",
       categoryLabel: "Topic",
       submitterLabel: "Submitter",
+      claimantLabel: "Claimant",
+      reporterLabel: "Reporter",
+      groupLabel: "Group",
+      reportTypeLabel: "Report type",
       joinMethodLabel: "Join method",
       joinValueLabel: "Join notes",
       groupLinkLabel: "Group link",
