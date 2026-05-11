@@ -146,6 +146,14 @@ type Dictionary = {
     groupManagementTitle: string;
     groupManagementDescription: string;
     editGroup: string;
+    groupSearchLabel: string;
+    groupSearchPlaceholder: string;
+    groupStatusAll: string;
+    groupCategoryAll: string;
+    groupPlatformAll: string;
+    groupFilterButton: string;
+    groupFilterClear: string;
+    groupResultsSummary: (shown: number, total: number) => string;
     submissionsTitle: string;
     submissionsDescription: string;
     claimsTitle: string;
@@ -429,6 +437,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       groupManagementTitle: "公开群组管理",
       groupManagementDescription: "快速进入最近更新的公开群组，修正文案、状态和加入方式。",
       editGroup: "编辑",
+      groupSearchLabel: "搜索群组",
+      groupSearchPlaceholder: "输入名称、slug 或简介",
+      groupStatusAll: "全部状态",
+      groupCategoryAll: "全部主题",
+      groupPlatformAll: "全部平台",
+      groupFilterButton: "筛选",
+      groupFilterClear: "清除",
+      groupResultsSummary: (shown, total) => `显示 ${shown} 个，共 ${total} 个匹配群组`,
       submissionsTitle: "新群提交",
       submissionsDescription: "审核用户提交的新兴趣群和加入方式。",
       claimsTitle: "群主认领",
@@ -742,6 +758,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       groupManagementDescription:
         "Open recently updated communities to adjust copy, status, and join details.",
       editGroup: "Edit",
+      groupSearchLabel: "Search groups",
+      groupSearchPlaceholder: "Name, slug, or description",
+      groupStatusAll: "All statuses",
+      groupCategoryAll: "All topics",
+      groupPlatformAll: "All platforms",
+      groupFilterButton: "Filter",
+      groupFilterClear: "Clear",
+      groupResultsSummary: (shown, total) =>
+        `Showing ${shown} of ${total} matching groups`,
       submissionsTitle: "New submissions",
       submissionsDescription: "Review newly submitted communities and join paths.",
       claimsTitle: "Ownership claims",

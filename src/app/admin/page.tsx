@@ -3,11 +3,23 @@ import { AdminQueue } from "@/components/AdminQueue";
 import { AdminReviewForm } from "@/components/AdminReviewForm";
 import Link from "next/link";
 import {
+  adminGroupStatuses,
+  hasActiveAdminGroupFilters,
+  normalizeAdminGroupFilters,
+  type AdminGroupFilters
+} from "@/lib/admin-group-filters";
+import {
   reviewOwnershipClaim,
   reviewReport,
   reviewSubmission
 } from "@/lib/actions/admin";
 import { getCurrentUser } from "@/lib/auth";
+import {
+  categories,
+  getCategoryLabel,
+  getPlatformLabel,
+  platforms
+} from "@/lib/domain";
 import { getDictionary, type Locale } from "@/lib/i18n";
 import { getRequestLocale } from "@/lib/request-locale";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
@@ -75,6 +87,7 @@ type AdminGroupRow = {
   platform: string;
   moderation_status: string;
   updated_at: string | null;
+  categories: { slug: string | null } | { slug: string | null }[] | null;
 };
 
 type AdminQueues = {
@@ -82,6 +95,7 @@ type AdminQueues = {
   claims: QueueItem[];
   reports: QueueItem[];
   recentGroups: QueueItem[];
+  recentGroupCount: number;
   pendingSubmissionCount: number;
   pendingClaimCount: number;
   pendingReportCount: number;
@@ -182,12 +196,26 @@ function buildReportDetails(
   ]);
 }
 
-async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
+function escapeIlikeTerm(value: string): string {
+  return value.replace(/[%_,]/g, " ").trim();
+}
+
+function firstCategorySlug(
+  category: AdminGroupRow["categories"]
+): string | null {
+  return Array.isArray(category) ? category[0]?.slug ?? null : category?.slug ?? null;
+}
+
+async function getAdminQueues(
+  locale: Locale,
+  groupFilters: AdminGroupFilters
+): Promise<AdminQueues> {
   const emptyQueues: AdminQueues = {
     submissions: [],
     claims: [],
     reports: [],
     recentGroups: [],
+    recentGroupCount: 0,
     pendingSubmissionCount: 0,
     pendingClaimCount: 0,
     pendingReportCount: 0,
@@ -218,6 +246,47 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
 
     if (profileError || profile?.role !== "admin") {
       return emptyQueues;
+    }
+
+    let managedGroupsQuery = supabase
+      .from("groups")
+      .select(
+        "id, name, slug, platform, moderation_status, updated_at, categories!inner(slug)",
+        { count: "exact" }
+      )
+      .order("updated_at", { ascending: false, nullsFirst: false })
+      .limit(20);
+
+    if (groupFilters.status === "all") {
+      managedGroupsQuery = managedGroupsQuery.in("moderation_status", [
+        ...adminGroupStatuses
+      ]);
+    } else {
+      managedGroupsQuery = managedGroupsQuery.eq(
+        "moderation_status",
+        groupFilters.status
+      );
+    }
+
+    if (groupFilters.platform !== "all") {
+      managedGroupsQuery = managedGroupsQuery.eq("platform", groupFilters.platform);
+    }
+
+    if (groupFilters.category !== "all") {
+      managedGroupsQuery = managedGroupsQuery.eq(
+        "categories.slug",
+        groupFilters.category
+      );
+    }
+
+    if (groupFilters.query) {
+      const query = escapeIlikeTerm(groupFilters.query);
+
+      if (query) {
+        managedGroupsQuery = managedGroupsQuery.or(
+          `name.ilike.%${query}%,slug.ilike.%${query}%,short_description.ilike.%${query}%`
+        );
+      }
     }
 
     const [
@@ -268,12 +337,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
           .from("groups")
           .select("id", { count: "exact", head: true })
           .eq("moderation_status", "approved"),
-        supabase
-          .from("groups")
-          .select("id, name, slug, platform, moderation_status, updated_at")
-          .in("moderation_status", ["approved", "needs_update", "suspended"])
-          .order("updated_at", { ascending: false, nullsFirst: false })
-          .limit(8)
+        managedGroupsQuery
       ]);
 
     const queryError =
@@ -301,10 +365,13 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
       pendingClaimCount: claimsResult.count ?? claimRows.length,
       pendingReportCount: reportsResult.count ?? reportRows.length,
       publishedGroupCount: groupsResult.count ?? 0,
+      recentGroupCount: recentGroupsResult.count ?? recentGroupRows.length,
       recentGroups: recentGroupRows.map((item) => ({
         id: item.id,
         title: item.name,
-        description: `${item.platform} · /groups/${item.slug}`,
+        description: [item.platform, firstCategorySlug(item.categories), `/groups/${item.slug}`]
+          .filter(Boolean)
+          .join(" · "),
         status: item.moderation_status,
         meta: formatDate(item.updated_at, locale)
       })),
@@ -346,6 +413,18 @@ function copyReportType(value: string, locale: Locale): string {
     : value;
 }
 
+function copyAdminGroupStatus(value: string, locale: Locale): string {
+  const labels = {
+    approved: { zh: "公开", en: "Published" },
+    needs_update: { zh: "需要更新", en: "Needs update" },
+    suspended: { zh: "下架", en: "Hidden" }
+  } as const;
+
+  return value in labels
+    ? labels[value as keyof typeof labels][locale]
+    : value;
+}
+
 function QueueEmpty({ message }: { message: string }) {
   return (
     <div className="rounded-lg border border-dashed border-ink/15 bg-white px-4 py-6 text-sm text-ink/55">
@@ -383,8 +462,10 @@ export default async function AdminPage({
   const params = await searchParams;
   const locale = await getRequestLocale(firstParam(params?.lang));
   const review = firstParam(params?.review);
+  const groupFilters = normalizeAdminGroupFilters(params);
+  const hasGroupFilters = hasActiveAdminGroupFilters(groupFilters);
   const copy = getDictionary(locale);
-  const queues = await getAdminQueues(locale);
+  const queues = await getAdminQueues(locale, groupFilters);
   const totalPending =
     queues.pendingSubmissionCount +
     queues.pendingClaimCount +
@@ -493,7 +574,7 @@ export default async function AdminPage({
           ))}
         </section>
 
-        {queues.recentGroups.length > 0 ? (
+        {queues.canLoadLive ? (
           <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -506,33 +587,121 @@ export default async function AdminPage({
               </div>
             </div>
 
-            <div className="mt-4 grid gap-2">
-              {queues.recentGroups.map((item) => (
-                <div
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 px-3 py-3"
-                  key={item.id}
+            <form
+              action="/admin"
+              className="mt-4 grid gap-3 rounded-md bg-paper p-3 md:grid-cols-[minmax(12rem,1fr)_repeat(3,minmax(8rem,10rem))_auto]"
+            >
+              <input name="lang" type="hidden" value={locale} />
+              <label className="grid gap-1.5 text-xs font-semibold text-ink/55">
+                {copy.admin.groupSearchLabel}
+                <input
+                  className="min-h-10 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+                  defaultValue={groupFilters.query}
+                  name="groupQuery"
+                  placeholder={copy.admin.groupSearchPlaceholder}
+                />
+              </label>
+              <label className="grid gap-1.5 text-xs font-semibold text-ink/55">
+                {copy.admin.statusLabel}
+                <select
+                  className="min-h-10 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+                  defaultValue={groupFilters.status}
+                  name="groupStatus"
                 >
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-ink">{item.title}</h3>
-                    <p className="mt-1 text-xs leading-5 text-ink/55">
-                      {item.description}
-                      {item.meta ? ` · ${item.meta}` : ""}
-                    </p>
+                  <option value="all">{copy.admin.groupStatusAll}</option>
+                  {adminGroupStatuses.map((status) => (
+                    <option key={status} value={status}>
+                      {copyAdminGroupStatus(status, locale)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-xs font-semibold text-ink/55">
+                {copy.admin.categoryLabel}
+                <select
+                  className="min-h-10 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+                  defaultValue={groupFilters.category}
+                  name="groupCategory"
+                >
+                  <option value="all">{copy.admin.groupCategoryAll}</option>
+                  {categories.map((category) => (
+                    <option key={category.slug} value={category.slug}>
+                      {getCategoryLabel(category.slug, locale)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-xs font-semibold text-ink/55">
+                {copy.search.platform}
+                <select
+                  className="min-h-10 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+                  defaultValue={groupFilters.platform}
+                  name="groupPlatform"
+                >
+                  <option value="all">{copy.admin.groupPlatformAll}</option>
+                  {platforms.map((platform) => (
+                    <option key={platform} value={platform}>
+                      {getPlatformLabel(platform, locale)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex items-end gap-2">
+                <button
+                  className="min-h-10 rounded-md bg-leaf px-4 py-2 text-sm font-semibold text-white transition hover:bg-coral"
+                  type="submit"
+                >
+                  {copy.admin.groupFilterButton}
+                </button>
+                {hasGroupFilters ? (
+                  <Link
+                    className="inline-flex min-h-10 items-center rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/65 transition hover:border-leaf hover:text-leaf"
+                    href={`/admin?lang=${locale}`}
+                  >
+                    {copy.admin.groupFilterClear}
+                  </Link>
+                ) : null}
+              </div>
+            </form>
+
+            <p className="mt-3 text-xs font-medium text-ink/50">
+              {copy.admin.groupResultsSummary(
+                queues.recentGroups.length,
+                queues.recentGroupCount
+              )}
+            </p>
+
+            {queues.recentGroups.length > 0 ? (
+              <div className="mt-4 grid gap-2">
+                {queues.recentGroups.map((item) => (
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 px-3 py-3"
+                    key={item.id}
+                  >
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-ink">{item.title}</h3>
+                      <p className="mt-1 text-xs leading-5 text-ink/55">
+                        {item.description}
+                        {item.meta ? ` · ${item.meta}` : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-md border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-leaf">
+                        {copyAdminGroupStatus(item.status, locale)}
+                      </span>
+                      <Link
+                        className="rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
+                        href={`/admin/groups/${item.id}/edit?lang=${locale}`}
+                      >
+                        {copy.admin.editGroup}
+                      </Link>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-md border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-leaf">
-                      {item.status}
-                    </span>
-                    <Link
-                      className="rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
-                      href={`/admin/groups/${item.id}/edit?lang=${locale}`}
-                    >
-                      {copy.admin.editGroup}
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <QueueEmpty message={copy.admin.emptyQueue} />
+            )}
           </section>
         ) : null}
 
