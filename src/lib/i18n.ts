@@ -143,6 +143,9 @@ type Dictionary = {
     pendingClaims: string;
     pendingReports: string;
     publishedGroups: string;
+    groupManagementTitle: string;
+    groupManagementDescription: string;
+    editGroup: string;
     submissionsTitle: string;
     submissionsDescription: string;
     claimsTitle: string;
@@ -423,6 +426,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       pendingClaims: "待处理认领",
       pendingReports: "待处理反馈",
       publishedGroups: "公开群组",
+      groupManagementTitle: "公开群组管理",
+      groupManagementDescription: "快速进入最近更新的公开群组，修正文案、状态和加入方式。",
+      editGroup: "编辑",
       submissionsTitle: "新群提交",
       submissionsDescription: "审核用户提交的新兴趣群和加入方式。",
       claimsTitle: "群主认领",
@@ -732,6 +738,10 @@ const dictionaries: Record<Locale, Dictionary> = {
       pendingClaims: "Pending claims",
       pendingReports: "Pending reports",
       publishedGroups: "Published groups",
+      groupManagementTitle: "Published group management",
+      groupManagementDescription:
+        "Open recently updated communities to adjust copy, status, and join details.",
+      editGroup: "Edit",
       submissionsTitle: "New submissions",
       submissionsDescription: "Review newly submitted communities and join paths.",
       claimsTitle: "Ownership claims",

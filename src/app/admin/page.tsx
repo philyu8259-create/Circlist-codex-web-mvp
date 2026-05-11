@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/AppHeader";
 import { AdminQueue } from "@/components/AdminQueue";
 import { AdminReviewForm } from "@/components/AdminReviewForm";
+import Link from "next/link";
 import {
   reviewOwnershipClaim,
   reviewReport,
@@ -67,10 +68,20 @@ type ReportQueueRow = {
   } | null;
 };
 
+type AdminGroupRow = {
+  id: string;
+  name: string;
+  slug: string;
+  platform: string;
+  moderation_status: string;
+  updated_at: string | null;
+};
+
 type AdminQueues = {
   submissions: QueueItem[];
   claims: QueueItem[];
   reports: QueueItem[];
+  recentGroups: QueueItem[];
   pendingSubmissionCount: number;
   pendingClaimCount: number;
   pendingReportCount: number;
@@ -176,6 +187,7 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
     submissions: [],
     claims: [],
     reports: [],
+    recentGroups: [],
     pendingSubmissionCount: 0,
     pendingClaimCount: 0,
     pendingReportCount: 0,
@@ -208,7 +220,13 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
       return emptyQueues;
     }
 
-    const [submissionsResult, claimsResult, reportsResult, groupsResult] =
+    const [
+      submissionsResult,
+      claimsResult,
+      reportsResult,
+      groupsResult,
+      recentGroupsResult
+    ] =
       await Promise.all([
         supabase.from("group_submissions").select(
           `
@@ -249,14 +267,21 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
         supabase
           .from("groups")
           .select("id", { count: "exact", head: true })
-          .eq("moderation_status", "approved")
+          .eq("moderation_status", "approved"),
+        supabase
+          .from("groups")
+          .select("id, name, slug, platform, moderation_status, updated_at")
+          .in("moderation_status", ["approved", "needs_update", "suspended"])
+          .order("updated_at", { ascending: false, nullsFirst: false })
+          .limit(8)
       ]);
 
     const queryError =
       submissionsResult.error ||
       claimsResult.error ||
       reportsResult.error ||
-      groupsResult.error;
+      groupsResult.error ||
+      recentGroupsResult.error;
 
     if (queryError) {
       return { ...emptyQueues, canLoadLive: true, liveUnavailable: true };
@@ -266,6 +291,8 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
       (submissionsResult.data as SubmissionQueueRow[] | null) ?? [];
     const claimRows = (claimsResult.data as ClaimQueueRow[] | null) ?? [];
     const reportRows = (reportsResult.data as ReportQueueRow[] | null) ?? [];
+    const recentGroupRows =
+      (recentGroupsResult.data as AdminGroupRow[] | null) ?? [];
 
     return {
       canLoadLive: true,
@@ -274,6 +301,13 @@ async function getAdminQueues(locale: Locale): Promise<AdminQueues> {
       pendingClaimCount: claimsResult.count ?? claimRows.length,
       pendingReportCount: reportsResult.count ?? reportRows.length,
       publishedGroupCount: groupsResult.count ?? 0,
+      recentGroups: recentGroupRows.map((item) => ({
+        id: item.id,
+        title: item.name,
+        description: `${item.platform} · /groups/${item.slug}`,
+        status: item.moderation_status,
+        meta: formatDate(item.updated_at, locale)
+      })),
       submissions: submissionRows.map((item) => ({
         id: item.id,
         title: item.proposed_name,
@@ -458,6 +492,49 @@ export default async function AdminPage({
             </div>
           ))}
         </section>
+
+        {queues.recentGroups.length > 0 ? (
+          <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-ink">
+                  {copy.admin.groupManagementTitle}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-ink/60">
+                  {copy.admin.groupManagementDescription}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              {queues.recentGroups.map((item) => (
+                <div
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-ink/10 px-3 py-3"
+                  key={item.id}
+                >
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-ink">{item.title}</h3>
+                    <p className="mt-1 text-xs leading-5 text-ink/55">
+                      {item.description}
+                      {item.meta ? ` · ${item.meta}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-md border border-leaf/20 bg-leaf/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-leaf">
+                      {item.status}
+                    </span>
+                    <Link
+                      className="rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/70 transition hover:border-leaf hover:text-leaf"
+                      href={`/admin/groups/${item.id}/edit?lang=${locale}`}
+                    >
+                      {copy.admin.editGroup}
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <div className="grid gap-5 lg:grid-cols-[1fr_18rem]">
           <div className="grid gap-5">

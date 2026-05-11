@@ -1,5 +1,14 @@
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
+import {
+  categories,
+  platforms,
+  type CategorySlug,
+  type JoinMethodType,
+  type ModerationStatus,
+  type Platform
+} from "../domain";
 import { hasSupabaseEnv } from "../supabase/env";
 import type { Database, Json } from "../supabase/types";
 
@@ -14,12 +23,30 @@ type OwnershipClaimDecision = Exclude<ReviewDecision, "changes_requested">;
 type GroupSubmissionUpdate =
   Database["public"]["Tables"]["group_submissions"]["Update"];
 type GroupInsert = Database["public"]["Tables"]["groups"]["Insert"];
+type GroupUpdate = Database["public"]["Tables"]["groups"]["Update"];
 type GroupJoinMethodInsert =
   Database["public"]["Tables"]["group_join_methods"]["Insert"];
+type GroupJoinMethodUpdate =
+  Database["public"]["Tables"]["group_join_methods"]["Update"];
 type OwnershipClaimUpdate =
   Database["public"]["Tables"]["ownership_claims"]["Update"];
 type ReportUpdate = Database["public"]["Tables"]["reports"]["Update"];
-type JoinMethodType = Database["public"]["Enums"]["join_method_type"];
+
+const activityLevels = ["low", "medium", "high", "unknown"] as const;
+const prices = ["free", "paid", "unknown"] as const;
+const editableModerationStatuses = [
+  "approved",
+  "needs_update",
+  "suspended"
+] as const satisfies readonly ModerationStatus[];
+const joinMethodTypes = [
+  "qr_code",
+  "invite_link",
+  "group_number",
+  "admin_contact",
+  "application_form",
+  "manual_notes"
+] as const satisfies readonly JoinMethodType[];
 
 type SubmissionApprovalRow = {
   id: string;
@@ -53,6 +80,33 @@ type ReviewReportInput = {
   reportId?: FormDataEntryValue | null;
   decision?: FormDataEntryValue | null;
 };
+type AdminGroupUpdateInput = {
+  groupId?: FormDataEntryValue | null;
+  joinMethodId?: FormDataEntryValue | null;
+  name?: FormDataEntryValue | null;
+  platform?: FormDataEntryValue | null;
+  categorySlug?: FormDataEntryValue | null;
+  shortDescription?: FormDataEntryValue | null;
+  description?: FormDataEntryValue | null;
+  suitableFor?: FormDataEntryValue | null;
+  language?: FormDataEntryValue | null;
+  region?: FormDataEntryValue | null;
+  activityLevel?: FormDataEntryValue | null;
+  price?: FormDataEntryValue | null;
+  rulesSummary?: FormDataEntryValue | null;
+  moderationStatus?: FormDataEntryValue | null;
+  shortDescriptionZh?: FormDataEntryValue | null;
+  descriptionZh?: FormDataEntryValue | null;
+  suitableForZh?: FormDataEntryValue | null;
+  rulesSummaryZh?: FormDataEntryValue | null;
+  shortDescriptionEn?: FormDataEntryValue | null;
+  descriptionEn?: FormDataEntryValue | null;
+  suitableForEn?: FormDataEntryValue | null;
+  rulesSummaryEn?: FormDataEntryValue | null;
+  joinMethodType?: FormDataEntryValue | null;
+  joinMethodLabel?: FormDataEntryValue | null;
+  joinMethodValue?: FormDataEntryValue | null;
+};
 
 type ReviewSubmissionValidation =
   | {
@@ -70,8 +124,37 @@ type ReviewOwnershipClaimValidation =
       reviewerNotes: string | null;
     }
   | { ok: false; errors: string[] };
+type AdminGroupUpdateValidation =
+  | {
+      ok: true;
+      value: {
+        activityLevel: (typeof activityLevels)[number];
+        categorySlug: CategorySlug;
+        description: string;
+        groupId: string;
+        joinMethodId: string | null;
+        joinMethodLabel: string;
+        joinMethodType: JoinMethodType;
+        joinMethodValue: string;
+        language: string | null;
+        localizedContent: Json;
+        moderationStatus: (typeof editableModerationStatuses)[number];
+        name: string;
+        platform: Platform;
+        price: (typeof prices)[number];
+        region: string | null;
+        rulesSummary: string | null;
+        shortDescription: string;
+        suitableFor: string | null;
+      };
+    }
+  | { ok: false; errors: string[] };
 
 const REVIEWER_NOTES_MAX_LENGTH = 2000;
+const GROUP_NAME_MIN_LENGTH = 2;
+const GROUP_NAME_MAX_LENGTH = 160;
+const SHORT_DESCRIPTION_MAX_LENGTH = 280;
+const DESCRIPTION_MAX_LENGTH = 2000;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -108,6 +191,46 @@ function payloadJoinValue(payload: Json): string {
 
 function isUuid(value: string): boolean {
   return UUID_PATTERN.test(value);
+}
+
+function isValidUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function isPlatform(value: string): value is Platform {
+  return platforms.includes(value as Platform);
+}
+
+function isCategorySlug(value: string): value is CategorySlug {
+  return categories.some((category) => category.slug === value);
+}
+
+function isJoinMethodType(value: string): value is JoinMethodType {
+  return joinMethodTypes.includes(value as JoinMethodType);
+}
+
+function isActivityLevel(
+  value: string
+): value is (typeof activityLevels)[number] {
+  return activityLevels.includes(value as (typeof activityLevels)[number]);
+}
+
+function isPrice(value: string): value is (typeof prices)[number] {
+  return prices.includes(value as (typeof prices)[number]);
+}
+
+function isEditableModerationStatus(
+  value: string
+): value is (typeof editableModerationStatuses)[number] {
+  return editableModerationStatuses.includes(
+    value as (typeof editableModerationStatuses)[number]
+  );
 }
 
 function isReviewDecision(value: string): value is ReviewDecision {
@@ -177,6 +300,131 @@ export function validateReviewReportInput(
     decision: input.decision,
     reviewerNotes: null
   });
+}
+
+function localizedFieldsFromInput(input: AdminGroupUpdateInput): Json {
+  const zh = {
+    shortDescription: text(input.shortDescriptionZh),
+    description: text(input.descriptionZh),
+    suitableFor: text(input.suitableForZh),
+    suitableAudience: text(input.suitableForZh),
+    rulesSummary: text(input.rulesSummaryZh)
+  };
+  const en = {
+    shortDescription: text(input.shortDescriptionEn),
+    description: text(input.descriptionEn),
+    suitableFor: text(input.suitableForEn),
+    suitableAudience: text(input.suitableForEn),
+    rulesSummary: text(input.rulesSummaryEn)
+  };
+  const content: Record<string, Record<string, string>> = {};
+
+  for (const [locale, values] of Object.entries({ zh, en })) {
+    for (const [key, value] of Object.entries(values)) {
+      if (!value) continue;
+
+      content[locale] = {
+        ...content[locale],
+        [key]: value
+      };
+    }
+  }
+
+  return content;
+}
+
+export function validateAdminGroupUpdateInput(
+  input: AdminGroupUpdateInput
+): AdminGroupUpdateValidation {
+  const groupId = text(input.groupId);
+  const joinMethodId = text(input.joinMethodId);
+  const name = text(input.name);
+  const platform = text(input.platform);
+  const categorySlug = text(input.categorySlug);
+  const shortDescription = text(input.shortDescription);
+  const description = text(input.description);
+  const suitableFor = text(input.suitableFor);
+  const language = text(input.language);
+  const region = text(input.region);
+  const activityLevel = text(input.activityLevel);
+  const price = text(input.price);
+  const rulesSummary = text(input.rulesSummary);
+  const moderationStatus = text(input.moderationStatus);
+  const joinMethodType = text(input.joinMethodType);
+  const joinMethodLabelText = text(input.joinMethodLabel);
+  const joinMethodValue = text(input.joinMethodValue);
+  const errors: string[] = [];
+
+  if (!groupId || !isUuid(groupId)) errors.push("Group target is invalid.");
+  if (joinMethodId && !isUuid(joinMethodId)) {
+    errors.push("Join method target is invalid.");
+  }
+  if (
+    !name ||
+    name.length < GROUP_NAME_MIN_LENGTH ||
+    name.length > GROUP_NAME_MAX_LENGTH
+  ) {
+    errors.push("Group name must be between 2 and 160 characters.");
+  }
+  if (!shortDescription) errors.push("Short description is required.");
+  if (shortDescription.length > SHORT_DESCRIPTION_MAX_LENGTH) {
+    errors.push("Short description must be 280 characters or fewer.");
+  }
+  if (!description) errors.push("Description is required.");
+  if (description.length > DESCRIPTION_MAX_LENGTH) {
+    errors.push("Description must be 2000 characters or fewer.");
+  }
+  if (!platform || !isPlatform(platform)) errors.push("Platform is invalid.");
+  if (!categorySlug || !isCategorySlug(categorySlug)) {
+    errors.push("Category is invalid.");
+  }
+  if (!activityLevel || !isActivityLevel(activityLevel)) {
+    errors.push("Activity level is invalid.");
+  }
+  if (!price || !isPrice(price)) errors.push("Price is invalid.");
+  if (!moderationStatus || !isEditableModerationStatus(moderationStatus)) {
+    errors.push("Moderation status is invalid.");
+  }
+  if (!joinMethodType || !isJoinMethodType(joinMethodType)) {
+    errors.push("Join method type is invalid.");
+  }
+  if (!joinMethodValue) errors.push("Join method value is required.");
+  if (
+    joinMethodValue &&
+    (joinMethodType === "invite_link" || joinMethodType === "application_form") &&
+    !isValidUrl(joinMethodValue)
+  ) {
+    errors.push("Join method value must be a valid URL.");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  return {
+    ok: true,
+    value: {
+      activityLevel: activityLevel as (typeof activityLevels)[number],
+      categorySlug: categorySlug as CategorySlug,
+      description,
+      groupId,
+      joinMethodId: joinMethodId || null,
+      joinMethodLabel:
+        joinMethodLabelText || joinMethodLabel(joinMethodType as JoinMethodType),
+      joinMethodType: joinMethodType as JoinMethodType,
+      joinMethodValue,
+      language: language || null,
+      localizedContent: localizedFieldsFromInput(input),
+      moderationStatus: moderationStatus as (typeof editableModerationStatuses)[number],
+      name,
+      platform: platform as Platform,
+      price: price as (typeof prices)[number],
+      region: region || null,
+      rulesSummary: rulesSummary || null,
+      shortDescription,
+      suitableFor: suitableFor || null
+    }
+  };
 }
 
 export function buildPublishedGroupSlug(name: string, submissionId: string): string {
@@ -560,4 +808,116 @@ export async function reviewReport(formData: FormData) {
   }
 
   redirect(`/admin?lang=${locale}&review=updated`);
+}
+
+export async function updateAdminGroup(formData: FormData) {
+  "use server";
+
+  const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
+  const validation = validateAdminGroupUpdateInput({
+    activityLevel: formData.get("activityLevel"),
+    categorySlug: formData.get("categorySlug"),
+    description: formData.get("description"),
+    descriptionEn: formData.get("descriptionEn"),
+    descriptionZh: formData.get("descriptionZh"),
+    groupId: formData.get("groupId"),
+    joinMethodId: formData.get("joinMethodId"),
+    joinMethodLabel: formData.get("joinMethodLabel"),
+    joinMethodType: formData.get("joinMethodType"),
+    joinMethodValue: formData.get("joinMethodValue"),
+    language: formData.get("language"),
+    moderationStatus: formData.get("moderationStatus"),
+    name: formData.get("name"),
+    platform: formData.get("platform"),
+    price: formData.get("price"),
+    region: formData.get("region"),
+    rulesSummary: formData.get("rulesSummary"),
+    rulesSummaryEn: formData.get("rulesSummaryEn"),
+    rulesSummaryZh: formData.get("rulesSummaryZh"),
+    shortDescription: formData.get("shortDescription"),
+    shortDescriptionEn: formData.get("shortDescriptionEn"),
+    shortDescriptionZh: formData.get("shortDescriptionZh"),
+    suitableFor: formData.get("suitableFor"),
+    suitableForEn: formData.get("suitableForEn"),
+    suitableForZh: formData.get("suitableForZh")
+  });
+
+  if (!validation.ok) {
+    redirect(`/admin/groups/${text(formData.get("groupId"))}/edit?lang=${locale}&edit=validation`);
+  }
+
+  const { supabase } = await requireAdmin();
+  const { value } = validation;
+  const { data: categoryData, error: categoryError } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", value.categorySlug)
+    .maybeSingle();
+  const category = categoryData as { id: string } | null;
+
+  if (categoryError || !category) {
+    redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=error`);
+  }
+
+  const now = new Date().toISOString();
+  const groupUpdate: GroupUpdate = {
+    activity_level: value.activityLevel,
+    category_id: category.id,
+    description: value.description,
+    language: value.language,
+    localized_content: value.localizedContent,
+    moderation_status: value.moderationStatus,
+    name: value.name,
+    platform: value.platform,
+    price: value.price,
+    region: value.region,
+    rules_summary: value.rulesSummary,
+    short_description: value.shortDescription,
+    suitable_for: value.suitableFor,
+    updated_at: now
+  };
+
+  const { data: groupData, error: groupError } = await supabase
+    .from("groups")
+    .update(groupUpdate as never)
+    .eq("id", value.groupId)
+    .select("slug")
+    .maybeSingle();
+  const group = groupData as { slug: string } | null;
+
+  if (groupError || !group) {
+    redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=error`);
+  }
+
+  const joinMethodUpdate: GroupJoinMethodUpdate = {
+    label: value.joinMethodLabel,
+    last_verified_at: now,
+    review_status:
+      value.moderationStatus === "approved" ? "approved" : "needs_update",
+    type: value.joinMethodType,
+    updated_at: now,
+    value: value.joinMethodValue,
+    visibility: "public"
+  };
+
+  const joinResult = value.joinMethodId
+    ? await supabase
+        .from("group_join_methods")
+        .update(joinMethodUpdate as never)
+        .eq("id", value.joinMethodId)
+        .eq("group_id", value.groupId)
+    : await supabase.from("group_join_methods").insert({
+        ...joinMethodUpdate,
+        created_at: now,
+        group_id: value.groupId
+      } as never);
+
+  if (joinResult.error) {
+    redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=error`);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath(`/groups/${group.slug}`);
+  redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=updated`);
 }

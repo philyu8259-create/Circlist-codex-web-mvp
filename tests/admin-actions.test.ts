@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPublishedGroupSlug,
   inferJoinPolicy,
+  validateAdminGroupUpdateInput,
   validateReviewOwnershipClaimInput,
   validateReviewReportInput,
   validateReviewSubmissionInput
@@ -108,5 +109,88 @@ describe("submission publishing helpers", () => {
     expect(inferJoinPolicy("admin_contact")).toBe("admin_contact");
     expect(inferJoinPolicy("application_form")).toBe("approval_required");
     expect(inferJoinPolicy("invite_link")).toBe("open");
+  });
+});
+
+describe("validateAdminGroupUpdateInput", () => {
+  it("accepts a valid admin group edit payload", () => {
+    const result = validateAdminGroupUpdateInput({
+      activityLevel: "high",
+      categorySlug: "ai",
+      description: "A practical AI builder community.",
+      descriptionEn: "A practical AI builder community.",
+      descriptionZh: "实战 AI 创业者社群。",
+      groupId: submissionId,
+      joinMethodId: submissionId,
+      joinMethodLabel: "Telegram invite",
+      joinMethodType: "invite_link",
+      joinMethodValue: "https://t.me/example",
+      language: "English",
+      moderationStatus: "approved",
+      name: "AI Builders",
+      platform: "telegram",
+      price: "free",
+      region: "Global",
+      rulesSummary: "Be respectful.",
+      shortDescription: "A focused AI community.",
+      shortDescriptionEn: "A focused AI community.",
+      shortDescriptionZh: "专注 AI 实战的社群。",
+      suitableFor: "Founders and engineers"
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      value: expect.objectContaining({
+        categorySlug: "ai",
+        groupId: submissionId,
+        joinMethodValue: "https://t.me/example",
+        localizedContent: {
+          en: {
+            description: "A practical AI builder community.",
+            shortDescription: "A focused AI community."
+          },
+          zh: {
+            description: "实战 AI 创业者社群。",
+            shortDescription: "专注 AI 实战的社群。"
+          }
+        },
+        moderationStatus: "approved",
+        name: "AI Builders"
+      })
+    });
+  });
+
+  it("rejects invalid group edits", () => {
+    const result = validateAdminGroupUpdateInput({
+      activityLevel: "loud",
+      categorySlug: "not-real",
+      description: "",
+      groupId: "not-a-uuid",
+      joinMethodId: "also-not-a-uuid",
+      joinMethodType: "invite_link",
+      joinMethodValue: "not-a-url",
+      moderationStatus: "draft",
+      name: "A",
+      platform: "telegram",
+      price: "free",
+      shortDescription: ""
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          "Group target is invalid.",
+          "Category is invalid.",
+          "Group name must be between 2 and 160 characters.",
+          "Short description is required.",
+          "Description is required.",
+          "Activity level is invalid.",
+          "Moderation status is invalid.",
+          "Join method target is invalid.",
+          "Join method value must be a valid URL."
+        ])
+      );
+    }
   });
 });
