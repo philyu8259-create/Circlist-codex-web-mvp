@@ -20,8 +20,8 @@ const decisions = [
 ];
 
 describe("AdminReviewForm", () => {
-  it("asks for confirmation before submitting a review decision", () => {
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+  it("opens an in-page confirmation dialog before submitting a decision", () => {
+    const confirmSpy = vi.spyOn(window, "confirm");
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const action = vi.fn();
 
@@ -39,7 +39,17 @@ describe("AdminReviewForm", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
 
-    expect(confirmSpy).toHaveBeenCalledWith("Approve this submission?");
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("dialog", { name: "Confirm review action" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Approve this submission?")).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Cancel" })[1]);
+
+    expect(
+      screen.queryByRole("dialog", { name: "Confirm review action" })
+    ).not.toBeInTheDocument();
     expect(action).not.toHaveBeenCalled();
 
     confirmSpy.mockRestore();
