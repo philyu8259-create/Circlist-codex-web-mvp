@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildPublishedGroupSlug,
   inferJoinPolicy,
+  isJoinFreshnessReportType,
+  restoreJoinFreshnessSignals,
   validateAdminGroupBatchUpdateInput,
   validateAdminGroupUpdateInput,
   validateReviewOwnershipClaimInput,
@@ -111,6 +113,24 @@ describe("submission publishing helpers", () => {
     expect(inferJoinPolicy("admin_contact")).toBe("admin_contact");
     expect(inferJoinPolicy("application_form")).toBe("approval_required");
     expect(inferJoinPolicy("invite_link")).toBe("open");
+  });
+});
+
+describe("join freshness recovery helpers", () => {
+  it("restores fresh join signals without dropping unrelated trust signals", () => {
+    expect(
+      restoreJoinFreshnessSignals([
+        "recently_verified",
+        "needs_update",
+        "owner_maintained"
+      ])
+    ).toEqual(["recently_verified", "owner_maintained", "join_method_fresh"]);
+  });
+
+  it("recognizes report types that affect join freshness", () => {
+    expect(isJoinFreshnessReportType("invalid_join_method")).toBe(true);
+    expect(isJoinFreshnessReportType("outdated_info")).toBe(true);
+    expect(isJoinFreshnessReportType("spam")).toBe(false);
   });
 });
 

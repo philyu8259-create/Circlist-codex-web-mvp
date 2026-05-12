@@ -69,6 +69,11 @@ type ClaimApprovalRow = {
   group_id: string;
   claimant_id: string;
 };
+type ReportReviewRow = {
+  group_id: string | null;
+  join_method_id: string | null;
+  report_type: string;
+};
 
 type ReviewSubmissionInput = {
   submissionId?: FormDataEntryValue | null;
@@ -266,6 +271,18 @@ function isEditableModerationStatus(
 
 function isReviewDecision(value: string): value is ReviewDecision {
   return reviewDecisions.includes(value as ReviewDecision);
+}
+
+export function isJoinFreshnessReportType(value: string): boolean {
+  return value === "invalid_join_method" || value === "outdated_info";
+}
+
+export function restoreJoinFreshnessSignals(signals: string[] | null): string[] {
+  const restoredSignals = (signals ?? []).filter(
+    (signal) => signal !== "needs_update" && signal !== "join_method_fresh"
+  );
+
+  return [...new Set([...restoredSignals, "join_method_fresh"])];
 }
 
 export function validateReviewSubmissionInput(
@@ -585,6 +602,88 @@ async function writeAdminAuditEvent({
       metadata
     }) as never
   );
+}
+
+async function restoreGroupJoinFreshnessIfClear({
+  groupId,
+  now,
+  supabase
+}: {
+  groupId: string;
+  now: string;
+  supabase: SupabaseServerClient;
+}): Promise<boolean> {
+  const { count, error: countError } = await supabase
+    .from("reports")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", groupId)
+    .eq("status", "pending")
+    .in("report_type", ["invalid_join_method", "outdated_info"]);
+
+  if (countError || (count ?? 0) > 0) {
+    return !countError;
+  }
+
+  const { data, error: readError } = await supabase
+    .from("groups")
+    .select("trust_signals")
+    .eq("id", groupId)
+    .maybeSingle();
+  const group = data as { trust_signals: string[] | null } | null;
+
+  if (readError || !group) {
+    return false;
+  }
+
+  const { error: updateError } = await supabase
+    .from("groups")
+    .update({
+      trust_signals: restoreJoinFreshnessSignals(group.trust_signals),
+      updated_at: now
+    } as never)
+    .eq("id", groupId);
+
+  return !updateError;
+}
+
+async function resolveFreshnessReportsAfterJoinUpdate({
+  groupId,
+  joinMethodId,
+  now,
+  supabase
+}: {
+  groupId: string;
+  joinMethodId: string | null;
+  now: string;
+  supabase: SupabaseServerClient;
+}): Promise<boolean> {
+  const groupLevelUpdate = await supabase
+    .from("reports")
+    .update({ status: "approved" } as never)
+    .eq("group_id", groupId)
+    .is("join_method_id", null)
+    .eq("status", "pending")
+    .in("report_type", ["invalid_join_method", "outdated_info"]);
+
+  if (groupLevelUpdate.error) {
+    return false;
+  }
+
+  if (joinMethodId) {
+    const methodLevelUpdate = await supabase
+      .from("reports")
+      .update({ status: "approved" } as never)
+      .eq("group_id", groupId)
+      .eq("join_method_id", joinMethodId)
+      .eq("status", "pending")
+      .in("report_type", ["invalid_join_method", "outdated_info"]);
+
+    if (methodLevelUpdate.error) {
+      return false;
+    }
+  }
+
+  return restoreGroupJoinFreshnessIfClear({ groupId, now, supabase });
 }
 
 async function resolveSubmissionCategoryId({
@@ -926,9 +1025,21 @@ export async function reviewReport(formData: FormData) {
   }
 
   const { supabase, user } = await requireAdmin();
+  const { data: reportData, error: reportReadError } = await supabase
+    .from("reports")
+    .select("group_id, join_method_id, report_type")
+    .eq("id", validation.submissionId)
+    .maybeSingle();
+  const report = reportData as ReportReviewRow | null;
+
+  if (reportReadError || !report) {
+    redirect(`/admin?lang=${locale}&review=error`);
+  }
+
   const update: ReportUpdate = {
     status: validation.decision
   };
+  const now = new Date().toISOString();
 
   const { error } = await supabase
     .from("reports")
@@ -936,6 +1047,19 @@ export async function reviewReport(formData: FormData) {
     .eq("id", validation.submissionId);
 
   if (error) {
+    redirect(`/admin?lang=${locale}&review=error`);
+  }
+
+  if (
+    report.group_id &&
+    isJoinFreshnessReportType(report.report_type) &&
+    validation.decision !== "changes_requested" &&
+    !(await restoreGroupJoinFreshnessIfClear({
+      groupId: report.group_id,
+      now,
+      supabase
+    }))
+  ) {
     redirect(`/admin?lang=${locale}&review=error`);
   }
 
@@ -1058,6 +1182,18 @@ export async function updateAdminGroup(formData: FormData) {
       } as never);
 
   if (joinResult.error) {
+    redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=error`);
+  }
+
+  if (
+    value.moderationStatus === "approved" &&
+    !(await resolveFreshnessReportsAfterJoinUpdate({
+      groupId: value.groupId,
+      joinMethodId: value.joinMethodId,
+      now,
+      supabase
+    }))
+  ) {
     redirect(`/admin/groups/${value.groupId}/edit?lang=${locale}&edit=error`);
   }
 

@@ -133,3 +133,10 @@ npm run e2e:clean-test-reports
 ```bash
 npm run e2e:verify-expired:smoke -- 67238615@qq.com
 ```
+
+开发环境验证“管理员更新加入方式后恢复可信状态”：
+
+```bash
+npm run e2e:verify-recovery -- 67238615@qq.com
+npm run e2e:clean-test-reports
+```

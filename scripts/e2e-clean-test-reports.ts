@@ -30,7 +30,7 @@ function requireEnv(name: string): string {
 
 function looksLikeTestReport(value: string | null): boolean {
   if (!value) return false;
-  return /^Playwright\u81ea\u52a8\u4e0a\u62a5-\d+$/.test(value);
+  return /^Playwright(\u81ea\u52a8\u4e0a\u62a5|\u6062\u590d\u95ed\u73af)-\d+$/.test(value);
 }
 
 async function main() {
@@ -52,7 +52,7 @@ async function main() {
     .select("id,details,created_at")
     .gte("created_at", dayStart.toISOString())
     .lt("created_at", dayEnd.toISOString())
-    .like("details", "Playwright自动上报-%")
+    .like("details", "Playwright%")
     .order("created_at", { ascending: false });
 
   if (error) {
