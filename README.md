@@ -126,7 +126,7 @@ npm run e2e:verify-expired:auto -- 67238615@qq.com
 npm run e2e:clean-test-reports
 ```
 
-`e2e:clean-test-reports` 会清除**当天（本地时区）** `details` 以 `Playwright自动上报-` 开头的测试反馈，避免每次验证后污染队列列表。
+`e2e:clean-test-reports` 会清除**当天（本地时区）** `details` 以 `Playwright自动上报-`、`Playwright恢复闭环-` 或 `Playwright报告队列-` 开头的测试反馈，避免每次验证后污染队列列表。
 
 开发环境一键回归（含清理）：
 
@@ -138,5 +138,12 @@ npm run e2e:verify-expired:smoke -- 67238615@qq.com
 
 ```bash
 npm run e2e:verify-recovery -- 67238615@qq.com
+npm run e2e:clean-test-reports
+```
+
+开发环境验证“后台报告队列筛选和编辑入口”：
+
+```bash
+npm run e2e:verify-admin-report-queue -- 67238615@qq.com
 npm run e2e:clean-test-reports
 ```

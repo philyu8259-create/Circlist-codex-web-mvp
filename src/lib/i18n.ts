@@ -157,6 +157,13 @@ type Dictionary = {
     groupFilterButton: string;
     groupFilterClear: string;
     groupResultsSummary: (shown: number, total: number) => string;
+    reportStatusFilter: string;
+    reportTypeFilter: string;
+    reportTypeAll: string;
+    reportEditGroup: string;
+    reportFreshnessNotice: string;
+    reportHandled: string;
+    reportFreshnessChecked: string;
     batchActionTitle: string;
     batchActionDescription: string;
     batchSetPublished: string;
@@ -465,6 +472,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       groupFilterButton: "筛选",
       groupFilterClear: "清除",
       groupResultsSummary: (shown, total) => `显示 ${shown} 个，共 ${total} 个匹配群组`,
+      reportStatusFilter: "反馈状态",
+      reportTypeFilter: "反馈类型",
+      reportTypeAll: "全部类型",
+      reportEditGroup: "去编辑加入方式",
+      reportFreshnessNotice:
+        "这类反馈通常需要先修正加入方式；保存后系统会重新检查失效提醒。",
+      reportHandled: "反馈状态已更新。",
+      reportFreshnessChecked: "反馈已处理，加入方式失效提醒已重新检查。",
       batchActionTitle: "批量操作",
       batchActionDescription: "勾选本页群组后，可批量恢复公开、标记需要更新或下架。",
       batchSetPublished: "设为公开",
@@ -804,6 +819,15 @@ const dictionaries: Record<Locale, Dictionary> = {
       groupFilterClear: "Clear",
       groupResultsSummary: (shown, total) =>
         `Showing ${shown} of ${total} matching groups`,
+      reportStatusFilter: "Report status",
+      reportTypeFilter: "Report type",
+      reportTypeAll: "All types",
+      reportEditGroup: "Edit join method",
+      reportFreshnessNotice:
+        "This report usually needs a join-method fix first. Saving the group rechecks stale warnings.",
+      reportHandled: "Report status updated.",
+      reportFreshnessChecked:
+        "Report handled. Join-method freshness warnings were rechecked.",
       batchActionTitle: "Batch actions",
       batchActionDescription:
         "Select groups on this page, then publish, mark needs update, or hide them.",

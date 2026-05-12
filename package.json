@@ -18,6 +18,7 @@
     "e2e:verify-expired:auto": "tsx scripts/e2e-verify-join-method-expiry-auto.ts",
     "e2e:verify-expired:smoke": "tsx scripts/e2e-verify-join-method-expiry-smoke.ts",
     "e2e:verify-recovery": "tsx scripts/e2e-verify-join-method-recovery.ts",
+    "e2e:verify-admin-report-queue": "tsx scripts/e2e-verify-admin-report-queue.ts",
     "e2e:clean-test-reports": "tsx scripts/e2e-clean-test-reports.ts"
   },
   "dependencies": {

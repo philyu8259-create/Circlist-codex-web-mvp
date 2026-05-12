@@ -12,6 +12,14 @@ import {
   type AdminGroupFilters
 } from "@/lib/admin-group-filters";
 import {
+  adminReportStatuses,
+  adminReportTypes,
+  hasActiveAdminReportFilters,
+  isJoinFreshnessReportFilterType,
+  normalizeAdminReportFilters,
+  type AdminReportFilters
+} from "@/lib/admin-report-filters";
+import {
   batchUpdateAdminGroups,
   reviewOwnershipClaim,
   reviewReport,
@@ -43,11 +51,15 @@ type SearchParams = Promise<
 
 type QueueItem = {
   id: string;
+  actionHref?: string;
+  actionLabel?: string;
   title: string;
   description: string;
   status: string;
+  rawStatus?: string;
   details?: { label: string; value: string }[];
   meta?: string;
+  notice?: string;
 };
 
 type SubmissionQueueRow = {
@@ -219,7 +231,8 @@ function firstCategorySlug(
 
 async function getAdminQueues(
   locale: Locale,
-  groupFilters: AdminGroupFilters
+  groupFilters: AdminGroupFilters,
+  reportFilters: AdminReportFilters
 ): Promise<AdminQueues> {
   const emptyQueues: AdminQueues = {
     submissions: [],
@@ -312,10 +325,25 @@ async function getAdminQueues(
       }
     }
 
+    let reportsQuery = supabase
+      .from("reports")
+      .select(
+        "id, group_id, join_method_id, reporter_id, report_type, details, status, created_at, groups(name, slug), group_join_methods(label, type, value)",
+        { count: "exact" }
+      )
+      .eq("status", reportFilters.status)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (reportFilters.type !== "all") {
+      reportsQuery = reportsQuery.eq("report_type", reportFilters.type);
+    }
+
     const [
       submissionsResult,
       claimsResult,
       reportsResult,
+      pendingReportsCountResult,
       groupsResult,
       recentGroupsResult,
       auditEventsResult
@@ -348,15 +376,11 @@ async function getAdminQueues(
           .eq("claim_status", "pending")
           .order("created_at", { ascending: false })
           .limit(10),
+        reportsQuery,
         supabase
           .from("reports")
-          .select(
-            "id, group_id, join_method_id, reporter_id, report_type, details, status, created_at, groups(name, slug), group_join_methods(label, type, value)",
-            { count: "exact" }
-          )
-          .eq("status", "pending")
-          .order("created_at", { ascending: false })
-          .limit(10),
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
         supabase
           .from("groups")
           .select("id", { count: "exact", head: true })
@@ -373,6 +397,7 @@ async function getAdminQueues(
       submissionsResult.error ||
       claimsResult.error ||
       reportsResult.error ||
+      pendingReportsCountResult.error ||
       groupsResult.error ||
       recentGroupsResult.error ||
       auditEventsResult.error;
@@ -417,7 +442,7 @@ async function getAdminQueues(
       liveUnavailable: false,
       pendingSubmissionCount: submissionsResult.count ?? submissionRows.length,
       pendingClaimCount: claimsResult.count ?? claimRows.length,
-      pendingReportCount: reportsResult.count ?? reportRows.length,
+      pendingReportCount: pendingReportsCountResult.count ?? 0,
       publishedGroupCount: groupsResult.count ?? 0,
       recentGroupCount,
       recentGroupPagination: {
@@ -457,14 +482,31 @@ async function getAdminQueues(
         status: item.claim_status,
         meta: formatDate(item.created_at, locale)
       })),
-      reports: reportRows.map((item) => ({
-        id: item.id,
-        title: copyReportType(item.report_type, locale),
-        description: item.details ?? item.report_type,
-        details: buildReportDetails(item, getDictionary(locale).admin, locale),
-        status: item.status,
-        meta: formatDate(item.created_at, locale)
-      }))
+      reports: reportRows.map((item) => {
+        const isJoinFreshnessReport = isJoinFreshnessReportFilterType(
+          item.report_type
+        );
+
+        return {
+          id: item.id,
+          actionHref:
+            item.group_id && isJoinFreshnessReport
+              ? `/admin/groups/${item.group_id}/edit?lang=${locale}`
+              : undefined,
+          actionLabel: isJoinFreshnessReport
+            ? getDictionary(locale).admin.reportEditGroup
+            : undefined,
+          title: copyReportType(item.report_type, locale),
+          description: item.details ?? item.report_type,
+          details: buildReportDetails(item, getDictionary(locale).admin, locale),
+          notice: isJoinFreshnessReport
+            ? getDictionary(locale).admin.reportFreshnessNotice
+            : undefined,
+          rawStatus: item.status,
+          status: copyReportStatus(item.status, locale),
+          meta: formatDate(item.created_at, locale)
+        };
+      })
     };
   } catch {
     return { ...emptyQueues, liveUnavailable: true };
@@ -484,6 +526,19 @@ function copyAdminGroupStatus(value: string, locale: Locale): string {
     approved: { zh: "公开", en: "Published" },
     needs_update: { zh: "需要更新", en: "Needs update" },
     suspended: { zh: "下架", en: "Hidden" }
+  } as const;
+
+  return value in labels
+    ? labels[value as keyof typeof labels][locale]
+    : value;
+}
+
+function copyReportStatus(value: string, locale: Locale): string {
+  const labels = {
+    approved: { zh: "已处理", en: "Handled" },
+    changes_requested: { zh: "要求修改", en: "Changes requested" },
+    pending: { zh: "待处理", en: "Pending" },
+    rejected: { zh: "已驳回", en: "Dismissed" }
   } as const;
 
   return value in labels
@@ -528,11 +583,14 @@ export default async function AdminPage({
   const params = await searchParams;
   const locale = await getRequestLocale(firstParam(params?.lang));
   const review = firstParam(params?.review);
+  const reportReview = firstParam(params?.reportReview);
   const batch = firstParam(params?.batch);
   const groupFilters = normalizeAdminGroupFilters(params);
   const hasGroupFilters = hasActiveAdminGroupFilters(groupFilters);
+  const reportFilters = normalizeAdminReportFilters(params);
+  const hasReportFilters = hasActiveAdminReportFilters(reportFilters);
   const copy = getDictionary(locale);
-  const queues = await getAdminQueues(locale, groupFilters);
+  const queues = await getAdminQueues(locale, groupFilters, reportFilters);
   const totalPending =
     queues.pendingSubmissionCount +
     queues.pendingClaimCount +
@@ -630,6 +688,14 @@ export default async function AdminPage({
         {review ? (
           <StatusNotice tone={review === "updated" ? "success" : "error"}>
             {review === "updated" ? copy.admin.reviewed : copy.admin.reviewFailed}
+          </StatusNotice>
+        ) : null}
+
+        {reportReview ? (
+          <StatusNotice tone="success">
+            {reportReview === "freshness_checked"
+              ? copy.admin.reportFreshnessChecked
+              : copy.admin.reportHandled}
           </StatusNotice>
         ) : null}
 
@@ -916,44 +982,101 @@ export default async function AdminPage({
                   </p>
                 </div>
 
+                <form
+                  action="/admin"
+                  className="grid gap-3 rounded-md bg-paper p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                >
+                  <input name="lang" type="hidden" value={locale} />
+                  <label className="grid gap-1.5 text-xs font-semibold text-ink/55">
+                    {copy.admin.reportStatusFilter}
+                    <select
+                      className="min-h-10 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+                      defaultValue={reportFilters.status}
+                      name="reportStatus"
+                    >
+                      {adminReportStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {copyReportStatus(status, locale)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="grid gap-1.5 text-xs font-semibold text-ink/55">
+                    {copy.admin.reportTypeFilter}
+                    <select
+                      className="min-h-10 rounded-md border border-ink/15 bg-white px-3 py-2 text-sm font-medium text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+                      defaultValue={reportFilters.type}
+                      name="reportType"
+                    >
+                      <option value="all">{copy.admin.reportTypeAll}</option>
+                      {adminReportTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {copyReportType(type, locale)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flex items-end gap-2">
+                    <button
+                      className="min-h-10 rounded-md bg-leaf px-4 py-2 text-sm font-semibold text-white transition hover:bg-coral"
+                      type="submit"
+                    >
+                      {copy.admin.groupFilterButton}
+                    </button>
+                    {hasReportFilters ? (
+                      <Link
+                        className="inline-flex min-h-10 items-center rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/65 transition hover:border-leaf hover:text-leaf"
+                        href={`/admin?lang=${locale}`}
+                      >
+                        {copy.admin.groupFilterClear}
+                      </Link>
+                    ) : null}
+                  </div>
+                </form>
+
                 {queues.reports.length > 0 ? (
                   queues.reports.map((item) => (
                     <AdminQueue
+                      actionHref={item.actionHref}
+                      actionLabel={item.actionLabel}
                       description={item.description}
                       details={item.details}
                       detailsTitle={copy.admin.detailsTitle}
                       key={item.id}
                       meta={item.meta}
+                      notice={item.notice}
                       status={`${copy.admin.statusLabel}: ${item.status}`}
                       title={item.title}
                     >
-                      <AdminReviewForm
-                        action={reviewReport}
-                        decisions={[
-                          {
-                            confirmMessage: copy.admin.resolveReportConfirm,
-                            label: copy.admin.resolveReport,
-                            tone: "approve",
-                            value: "approved"
-                          },
-                          {
-                            confirmMessage: copy.admin.dismissReportConfirm,
-                            label: copy.admin.dismissReport,
-                            tone: "reject",
-                            value: "rejected"
-                          },
-                          {
-                            confirmMessage: copy.admin.requestChangesConfirm,
-                            label: copy.admin.requestChanges,
-                            tone: "neutral",
-                            value: "changes_requested"
-                          }
-                        ]}
-                        entityFieldName="reportId"
-                        entityId={item.id}
-                        locale={locale}
-                        showReviewerNotes={false}
-                      />
+                      {item.rawStatus === "pending" ? (
+                        <AdminReviewForm
+                          action={reviewReport}
+                          decisions={[
+                            {
+                              confirmMessage: copy.admin.resolveReportConfirm,
+                              label: copy.admin.resolveReport,
+                              tone: "approve",
+                              value: "approved"
+                            },
+                            {
+                              confirmMessage: copy.admin.dismissReportConfirm,
+                              label: copy.admin.dismissReport,
+                              tone: "reject",
+                              value: "rejected"
+                            },
+                            {
+                              confirmMessage: copy.admin.requestChangesConfirm,
+                              label: copy.admin.requestChanges,
+                              tone: "neutral",
+                              value: "changes_requested"
+                            }
+                          ]}
+                          entityFieldName="reportId"
+                          entityId={item.id}
+                          locale={locale}
+                          showReviewerNotes={false}
+                        />
+                      ) : null}
                     </AdminQueue>
                   ))
                 ) : (

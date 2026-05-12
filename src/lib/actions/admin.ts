@@ -1050,17 +1050,24 @@ export async function reviewReport(formData: FormData) {
     redirect(`/admin?lang=${locale}&review=error`);
   }
 
+  let reportReviewResult = "handled";
+
   if (
     report.group_id &&
     isJoinFreshnessReportType(report.report_type) &&
-    validation.decision !== "changes_requested" &&
-    !(await restoreGroupJoinFreshnessIfClear({
-      groupId: report.group_id,
-      now,
-      supabase
-    }))
+    validation.decision !== "changes_requested"
   ) {
-    redirect(`/admin?lang=${locale}&review=error`);
+    if (
+      !(await restoreGroupJoinFreshnessIfClear({
+        groupId: report.group_id,
+        now,
+        supabase
+      }))
+    ) {
+      redirect(`/admin?lang=${locale}&review=error`);
+    }
+
+    reportReviewResult = "freshness_checked";
   }
 
   await writeAdminAuditEvent({
@@ -1074,7 +1081,9 @@ export async function reviewReport(formData: FormData) {
     supabase
   });
 
-  redirect(`/admin?lang=${locale}&review=updated`);
+  redirect(
+    `/admin?lang=${locale}&review=updated&reportReview=${reportReviewResult}`
+  );
 }
 
 export async function updateAdminGroup(formData: FormData) {

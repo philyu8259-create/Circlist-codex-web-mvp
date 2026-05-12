@@ -30,7 +30,8 @@ function requireEnv(name: string): string {
 
 function looksLikeTestReport(value: string | null): boolean {
   if (!value) return false;
-  return /^Playwright(\u81ea\u52a8\u4e0a\u62a5|\u6062\u590d\u95ed\u73af)-\d+$/.test(value);
+
+  return /^Playwright(\u81ea\u52a8\u4e0a\u62a5|\u6062\u590d\u95ed\u73af|\u62a5\u544a\u961f\u5217)-\d+$/.test(value);
 }
 
 async function main() {
