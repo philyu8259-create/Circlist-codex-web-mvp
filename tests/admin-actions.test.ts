@@ -124,6 +124,7 @@ describe("validateAdminGroupUpdateInput", () => {
       descriptionZh: "实战 AI 创业者社群。",
       groupId: submissionId,
       joinMethodId: submissionId,
+      joinMethodExpiresAt: "2026-06-30",
       joinMethodLabel: "Telegram invite",
       joinMethodType: "invite_link",
       joinMethodValue: "https://t.me/example",
@@ -145,6 +146,7 @@ describe("validateAdminGroupUpdateInput", () => {
       value: expect.objectContaining({
         categorySlug: "ai",
         groupId: submissionId,
+        joinMethodExpiresAt: "2026-06-30T23:59:59.999Z",
         joinMethodValue: "https://t.me/example",
         localizedContent: {
           en: {
@@ -169,6 +171,7 @@ describe("validateAdminGroupUpdateInput", () => {
       description: "",
       groupId: "not-a-uuid",
       joinMethodId: "also-not-a-uuid",
+      joinMethodExpiresAt: "2026-02-31",
       joinMethodType: "invite_link",
       joinMethodValue: "not-a-url",
       moderationStatus: "draft",
@@ -190,6 +193,7 @@ describe("validateAdminGroupUpdateInput", () => {
           "Activity level is invalid.",
           "Moderation status is invalid.",
           "Join method target is invalid.",
+          "Join method expiration date is invalid.",
           "Join method value must be a valid URL."
         ])
       );

@@ -48,7 +48,7 @@ describe("group search", () => {
       byName
         .slice(0, 5)
         .map((group) => group.name)
-        .toSorted((a, b) => a.localeCompare(b))
+        .sort((a: string, b: string) => a.localeCompare(b))
     );
   });
 

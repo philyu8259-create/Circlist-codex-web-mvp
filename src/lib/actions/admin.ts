@@ -110,6 +110,7 @@ type AdminGroupUpdateInput = {
   joinMethodType?: FormDataEntryValue | null;
   joinMethodLabel?: FormDataEntryValue | null;
   joinMethodValue?: FormDataEntryValue | null;
+  joinMethodExpiresAt?: FormDataEntryValue | null;
 };
 type AdminGroupBatchUpdateInput = {
   groupIds?: FormDataEntryValue[] | null;
@@ -141,6 +142,7 @@ type AdminGroupUpdateValidation =
         description: string;
         groupId: string;
         joinMethodId: string | null;
+        joinMethodExpiresAt: string | null;
         joinMethodLabel: string;
         joinMethodType: JoinMethodType;
         joinMethodValue: string;
@@ -170,6 +172,7 @@ const GROUP_NAME_MIN_LENGTH = 2;
 const GROUP_NAME_MAX_LENGTH = 160;
 const SHORT_DESCRIPTION_MAX_LENGTH = 280;
 const DESCRIPTION_MAX_LENGTH = 2000;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -216,6 +219,19 @@ function isValidUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function dateInputToIso(value: string): string | null {
+  if (!value) return null;
+  if (!DATE_ONLY_PATTERN.test(value)) return null;
+
+  const date = new Date(`${value}T23:59:59.999Z`);
+
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    return null;
+  }
+
+  return date.toISOString();
 }
 
 function isPlatform(value: string): value is Platform {
@@ -368,6 +384,8 @@ export function validateAdminGroupUpdateInput(
   const joinMethodType = text(input.joinMethodType);
   const joinMethodLabelText = text(input.joinMethodLabel);
   const joinMethodValue = text(input.joinMethodValue);
+  const joinMethodExpiresAtText = text(input.joinMethodExpiresAt);
+  const joinMethodExpiresAt = dateInputToIso(joinMethodExpiresAtText);
   const errors: string[] = [];
 
   if (!groupId || !isUuid(groupId)) errors.push("Group target is invalid.");
@@ -404,6 +422,9 @@ export function validateAdminGroupUpdateInput(
     errors.push("Join method type is invalid.");
   }
   if (!joinMethodValue) errors.push("Join method value is required.");
+  if (joinMethodExpiresAtText && !joinMethodExpiresAt) {
+    errors.push("Join method expiration date is invalid.");
+  }
   if (
     joinMethodValue &&
     (joinMethodType === "invite_link" || joinMethodType === "application_form") &&
@@ -424,6 +445,7 @@ export function validateAdminGroupUpdateInput(
       description,
       groupId,
       joinMethodId: joinMethodId || null,
+      joinMethodExpiresAt,
       joinMethodLabel:
         joinMethodLabelText || joinMethodLabel(joinMethodType as JoinMethodType),
       joinMethodType: joinMethodType as JoinMethodType,
@@ -942,6 +964,7 @@ export async function updateAdminGroup(formData: FormData) {
     descriptionEn: formData.get("descriptionEn"),
     descriptionZh: formData.get("descriptionZh"),
     groupId: formData.get("groupId"),
+    joinMethodExpiresAt: formData.get("joinMethodExpiresAt"),
     joinMethodId: formData.get("joinMethodId"),
     joinMethodLabel: formData.get("joinMethodLabel"),
     joinMethodType: formData.get("joinMethodType"),
@@ -1011,6 +1034,7 @@ export async function updateAdminGroup(formData: FormData) {
   }
 
   const joinMethodUpdate: GroupJoinMethodUpdate = {
+    expires_at: value.joinMethodExpiresAt,
     label: value.joinMethodLabel,
     last_verified_at: now,
     review_status:

@@ -8,7 +8,9 @@ import { getApprovedGroupBySlug } from "@/lib/data/groups";
 import { getCategoryLabel, getGroupText, getPlatformLabel } from "@/lib/domain";
 import {
   getOwnerTrustStatus,
+  isJoinMethodExpired,
   isExternalJoinValue,
+  shouldWarnAboutJoinFreshness,
   shouldShowInvestmentRisk
 } from "@/lib/group-detail";
 import { getDictionary } from "@/lib/i18n";
@@ -54,6 +56,7 @@ export default async function GroupDetailPage({
       ? copy.detail.officialMaintained
       : copy.detail.publicUnofficial;
   const showInvestmentRisk = shouldShowInvestmentRisk(group.categorySlug);
+  const showJoinFreshnessWarning = shouldWarnAboutJoinFreshness(group);
 
   return (
     <>
@@ -144,51 +147,84 @@ export default async function GroupDetailPage({
             <h2 className="text-lg font-semibold text-ink">
               {copy.detail.joinMethods}
             </h2>
+            {showJoinFreshnessWarning ? (
+              <div className="mt-4 rounded-md border border-coral/25 bg-coral/10 px-3 py-3 text-sm leading-6 text-coral">
+                <p className="font-semibold">
+                  {locale === "en"
+                    ? "Some joining details may be stale"
+                    : "部分加入方式可能已失效"}
+                </p>
+                <p className="mt-1">
+                  {locale === "en"
+                    ? "Please verify the entry before relying on it. If it no longer works, send an invalid-join report below."
+                    : "使用前请先核验入口是否可用。如果无法加入，可以在下方反馈“加入方式失效”。"}
+                </p>
+              </div>
+            ) : null}
             {approvedJoinMethods.length > 0 ? (
               <div className="mt-4 divide-y divide-ink/10 border-y border-ink/10">
-                {approvedJoinMethods.map((method) => (
-                  <div
-                    className="py-4 first:pt-3 last:pb-3"
-                    key={method.id}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-ink">
-                        {method.label}
-                      </h3>
-                      <span className="text-xs font-medium text-leaf">
-                        {copy.joinMethodTypes[method.type]}
-                      </span>
+                {approvedJoinMethods.map((method) => {
+                  const methodExpired = isJoinMethodExpired(method);
+                  const isExternal = isExternalJoinValue(method.value);
+
+                  return (
+                    <div
+                      className="py-4 first:pt-3 last:pb-3"
+                      key={method.id}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-ink">
+                          {method.label}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {methodExpired ? (
+                            <span className="rounded-md border border-coral/25 bg-coral/10 px-2 py-1 text-xs font-semibold text-coral">
+                              {locale === "en" ? "Expired" : "已失效"}
+                            </span>
+                          ) : null}
+                          <span className="text-xs font-medium text-leaf">
+                            {copy.joinMethodTypes[method.type]}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="mt-2 break-words text-sm leading-6 text-ink/70">
+                        {isExternal && !methodExpired ? (
+                          <a
+                            className="inline-flex min-h-11 items-center justify-center rounded-md bg-leaf px-4 py-2 text-sm font-semibold text-white transition hover:bg-coral"
+                            href={method.value}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {copy.detail.joinNow}
+                          </a>
+                        ) : (
+                          method.value
+                        )}
+                      </p>
+                      {isExternal ? (
+                        <>
+                          <p className="mt-2 break-words text-xs leading-5 text-ink/50">
+                            {method.value}
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-ink/50">
+                            {methodExpired
+                              ? locale === "en"
+                                ? "This entry is past its expiration date. Use caution and report it if it no longer works."
+                                : "这个入口已超过失效日期。请谨慎使用，无法加入时请反馈失效。"
+                              : copy.detail.externalLinkHint}
+                          </p>
+                        </>
+                      ) : null}
+                      <p className="mt-3 text-xs text-ink/50">
+                        {copy.fields.lastVerified}:{" "}
+                        {method.lastVerifiedAt ?? group.lastVerifiedAt ?? "-"}
+                        {method.expiresAt
+                          ? ` · ${locale === "en" ? "Expires" : "失效日期"}: ${method.expiresAt}`
+                          : ""}
+                      </p>
                     </div>
-                    <p className="mt-2 break-words text-sm leading-6 text-ink/70">
-                      {isExternalJoinValue(method.value) ? (
-                        <a
-                          className="inline-flex min-h-11 items-center justify-center rounded-md bg-leaf px-4 py-2 text-sm font-semibold text-white transition hover:bg-coral"
-                          href={method.value}
-                          rel="noreferrer"
-                          target="_blank"
-                        >
-                          {copy.detail.joinNow}
-                        </a>
-                      ) : (
-                        method.value
-                      )}
-                    </p>
-                    {isExternalJoinValue(method.value) ? (
-                      <>
-                        <p className="mt-2 break-words text-xs leading-5 text-ink/50">
-                          {method.value}
-                        </p>
-                        <p className="mt-2 text-xs leading-5 text-ink/50">
-                          {copy.detail.externalLinkHint}
-                        </p>
-                      </>
-                    ) : null}
-                    <p className="mt-3 text-xs text-ink/50">
-                      {copy.fields.lastVerified}:{" "}
-                      {method.lastVerifiedAt ?? group.lastVerifiedAt ?? "-"}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="mt-3 text-sm text-ink/60">
@@ -323,6 +359,29 @@ export default async function GroupDetailPage({
                 ))}
               </select>
             </label>
+            {approvedJoinMethods.length > 0 ? (
+              <label className="mt-4 grid gap-2 text-sm font-medium text-ink">
+                {copy.detail.joinMethods}
+                <select
+                  className="rounded-md border border-ink/15 px-3 py-2 text-base outline-none transition focus:border-leaf"
+                  name="joinMethodId"
+                >
+                  <option value="">
+                    {locale === "en" ? "Whole group" : "整个群组"}
+                  </option>
+                  {approvedJoinMethods.map((method) => (
+                    <option key={method.id} value={method.id}>
+                      {method.label}
+                      {isJoinMethodExpired(method)
+                        ? locale === "en"
+                          ? " (expired)"
+                          : "（已失效）"
+                        : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <label className="mt-4 grid gap-2 text-sm font-medium text-ink">
               {copy.detail.reportMessage}
               <textarea

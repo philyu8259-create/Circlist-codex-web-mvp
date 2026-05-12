@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AdminGroupEditForm } from "@/components/AdminGroupEditForm";
 import { AppHeader } from "@/components/AppHeader";
 import {
   requireAdmin,
@@ -33,6 +34,8 @@ type JoinMethodRow = {
   value: string;
   visibility: string;
   review_status: string;
+  expires_at: string | null;
+  last_verified_at: string | null;
   updated_at: string | null;
 };
 
@@ -84,14 +87,40 @@ function localizedText(
   return content[locale]?.[field] ?? "";
 }
 
+function dateInputValue(value: string | null | undefined): string {
+  return value ? value.slice(0, 10) : "";
+}
+
+function formatDate(value: string | null | undefined, locale: Locale): string {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "zh-CN", {
+    dateStyle: "medium"
+  }).format(new Date(value));
+}
+
+function isPastDate(value: string | null | undefined): boolean {
+  if (!value) return false;
+
+  const expiresAt = new Date(value);
+  const today = new Date();
+
+  today.setHours(0, 0, 0, 0);
+  expiresAt.setHours(0, 0, 0, 0);
+
+  return expiresAt < today;
+}
+
 function TextField({
   defaultValue,
+  help,
   label,
   name,
   required,
   type = "text"
 }: {
   defaultValue?: string | null;
+  help?: string;
   label: string;
   name: string;
   required?: boolean;
@@ -107,18 +136,21 @@ function TextField({
         required={required}
         type={type}
       />
+      {help ? <span className="text-xs leading-5 text-ink/50">{help}</span> : null}
     </label>
   );
 }
 
 function TextareaField({
   defaultValue,
+  help,
   label,
   minHeight = "min-h-28",
   name,
   required
 }: {
   defaultValue?: string | null;
+  help?: string;
   label: string;
   minHeight?: string;
   name: string;
@@ -133,22 +165,99 @@ function TextareaField({
         name={name}
         required={required}
       />
+      {help ? <span className="text-xs leading-5 text-ink/50">{help}</span> : null}
     </label>
   );
 }
 
 function FormSection({
   children,
+  description,
   title
 }: {
   children: React.ReactNode;
+  description?: string;
   title: string;
 }) {
   return (
     <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-ink">{title}</h2>
+      {description ? (
+        <p className="mt-2 text-sm leading-6 text-ink/55">{description}</p>
+      ) : null}
       <div className="mt-4 grid gap-4">{children}</div>
     </section>
+  );
+}
+
+function JoinMethodFreshnessNotice({
+  joinMethod,
+  locale,
+  moderationStatus
+}: {
+  joinMethod: JoinMethodRow | null;
+  locale: Locale;
+  moderationStatus: EditableGroupRow["moderation_status"];
+}) {
+  const isExpired = isPastDate(joinMethod?.expires_at);
+  const shouldWarn =
+    !joinMethod ||
+    moderationStatus === "needs_update" ||
+    joinMethod.review_status !== "approved" ||
+    isExpired;
+
+  if (!shouldWarn) {
+    return (
+      <div className="rounded-md border border-leaf/20 bg-leaf/10 px-3 py-3 text-sm leading-6 text-leaf">
+        {locale === "en"
+          ? `Join method looks fresh${
+              joinMethod?.last_verified_at
+                ? `, last verified ${formatDate(joinMethod.last_verified_at, locale)}`
+                : ""
+            }.`
+          : `加入方式看起来有效${
+              joinMethod?.last_verified_at
+                ? `，上次核验：${formatDate(joinMethod.last_verified_at, locale)}`
+                : ""
+            }。`}
+      </div>
+    );
+  }
+
+  const reasons = [
+    !joinMethod
+      ? locale === "en"
+        ? "No public join method exists yet."
+        : "当前还没有公开加入方式。"
+      : "",
+    moderationStatus === "needs_update"
+      ? locale === "en"
+        ? "This group is marked as needing an update."
+        : "这个群组已标记为需要更新。"
+      : "",
+    joinMethod && joinMethod.review_status !== "approved"
+      ? locale === "en"
+        ? `Join method review status is ${joinMethod.review_status}.`
+        : `加入方式审核状态为 ${joinMethod.review_status}。`
+      : "",
+    isExpired
+      ? locale === "en"
+        ? `Join method expired on ${formatDate(joinMethod?.expires_at, locale)}.`
+        : `加入方式已于 ${formatDate(joinMethod?.expires_at, locale)} 过期。`
+      : ""
+  ].filter(Boolean);
+
+  return (
+    <div className="rounded-md border border-coral/25 bg-coral/10 px-3 py-3 text-sm leading-6 text-coral">
+      <p className="font-semibold">
+        {locale === "en" ? "Join method may be invalid" : "加入方式可能已失效"}
+      </p>
+      <ul className="mt-2 grid gap-1">
+        {reasons.map((reason) => (
+          <li key={reason}>{reason}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -194,6 +303,8 @@ export default async function EditAdminGroupPage({
         value,
         visibility,
         review_status,
+        expires_at,
+        last_verified_at,
         updated_at
       )
     `
@@ -250,18 +361,71 @@ export default async function EditAdminGroupPage({
           </p>
         ) : null}
 
-        <form action={updateAdminGroup} className="grid gap-5">
+        <AdminGroupEditForm
+          action={updateAdminGroup}
+          labels={{
+            cancel: locale === "en" ? "Cancel" : "取消",
+            confirm: locale === "en" ? "Confirm save" : "确认保存",
+            confirmDescription:
+              locale === "en"
+                ? "This will immediately update the public group profile and join method. Please confirm the join path is still usable before saving."
+                : "这会立即更新公开群组资料和加入方式。保存前请确认加入入口仍然可用。",
+            confirmTitle:
+              locale === "en" ? "Save group changes?" : "确认保存群组修改？",
+            saveButton: locale === "en" ? "Save changes" : "保存修改"
+          }}
+        >
           <input name="groupId" type="hidden" value={group.id} />
           <input name="joinMethodId" type="hidden" value={joinMethod?.id ?? ""} />
           <input name="lang" type="hidden" value={locale} />
 
-          <FormSection title={locale === "en" ? "Basics" : "基础信息"}>
+          <FormSection
+            description={
+              locale === "en"
+                ? "These fields define the public name and core positioning visitors see first."
+                : "这些字段决定访客最先看到的公开名称和核心定位。"
+            }
+            title={locale === "en" ? "Public profile" : "公开资料"}
+          >
             <TextField
               defaultValue={group.name}
               label={copy.submit.name}
               name="name"
               required
             />
+            <TextField
+              defaultValue={group.short_description}
+              help={
+                locale === "en"
+                  ? "Keep this short enough for cards and search results."
+                  : "尽量保持简短，适合卡片和搜索结果展示。"
+              }
+              label={copy.submit.shortDescription}
+              name="shortDescription"
+              required
+            />
+            <TextareaField
+              defaultValue={group.description}
+              label={copy.submit.description}
+              minHeight="min-h-36"
+              name="description"
+              required
+            />
+            <TextareaField
+              defaultValue={group.suitable_for}
+              label={copy.detail.suitableFor}
+              name="suitableFor"
+            />
+          </FormSection>
+
+          <FormSection
+            description={
+              locale === "en"
+                ? "Use this section for taxonomy and lightweight public metadata."
+                : "这里集中维护分类、平台和轻量公开信息。"
+            }
+            title={locale === "en" ? "Classification" : "分类信息"}
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-ink">
                 {copy.submit.platform}
@@ -292,27 +456,28 @@ export default async function EditAdminGroupPage({
                 </select>
               </label>
             </div>
-            <TextField
-              defaultValue={group.short_description}
-              label={copy.submit.shortDescription}
-              name="shortDescription"
-              required
-            />
-            <TextareaField
-              defaultValue={group.description}
-              label={copy.submit.description}
-              minHeight="min-h-36"
-              name="description"
-              required
-            />
-            <TextareaField
-              defaultValue={group.suitable_for}
-              label={copy.detail.suitableFor}
-              name="suitableFor"
-            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                defaultValue={group.language}
+                label={copy.submit.language}
+                name="language"
+              />
+              <TextField
+                defaultValue={group.region}
+                label={copy.submit.region}
+                name="region"
+              />
+            </div>
           </FormSection>
 
-          <FormSection title={locale === "en" ? "Localized copy" : "中英文文案"}>
+          <FormSection
+            description={
+              locale === "en"
+                ? "Optional localized copy overrides the default public text when users switch languages."
+                : "可选文案会在用户切换语言时覆盖默认公开文本。"
+            }
+            title={locale === "en" ? "Localized copy" : "中英文文案"}
+          >
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="grid gap-4">
                 <TextField
@@ -363,7 +528,14 @@ export default async function EditAdminGroupPage({
             </div>
           </FormSection>
 
-          <FormSection title={locale === "en" ? "Status and join path" : "状态和加入方式"}>
+          <FormSection
+            description={
+              locale === "en"
+                ? "Operational state controls whether this group is visible or flagged for owner follow-up."
+                : "运营状态决定群组是否公开展示，以及是否提示群主更新。"
+            }
+            title={locale === "en" ? "Operational status" : "运营状态"}
+          >
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="grid gap-2 text-sm font-medium text-ink">
                 {copy.fields.price}
@@ -412,22 +584,25 @@ export default async function EditAdminGroupPage({
                 </select>
               </label>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <TextField
-                defaultValue={group.language}
-                label={copy.submit.language}
-                name="language"
-              />
-              <TextField
-                defaultValue={group.region}
-                label={copy.submit.region}
-                name="region"
-              />
-            </div>
             <TextareaField
               defaultValue={group.rules_summary}
               label={copy.submit.rulesSummary}
               name="rulesSummary"
+            />
+          </FormSection>
+
+          <FormSection
+            description={
+              locale === "en"
+                ? "Review the actual entry users follow to join. QR codes and invite links should be checked before saving."
+                : "这里维护用户真正用来加入的入口。二维码和邀请链接保存前应先确认可用。"
+            }
+            title={locale === "en" ? "Join method" : "加入方式"}
+          >
+            <JoinMethodFreshnessNotice
+              joinMethod={joinMethod}
+              locale={locale}
+              moderationStatus={group.moderation_status}
             />
             <div className="grid gap-4 sm:grid-cols-3">
               <label className="grid gap-2 text-sm font-medium text-ink">
@@ -456,15 +631,19 @@ export default async function EditAdminGroupPage({
                 required
               />
             </div>
+            <TextField
+              defaultValue={dateInputValue(joinMethod?.expires_at)}
+              help={
+                locale === "en"
+                  ? "Optional. Use this for QR codes or invite links that can expire."
+                  : "可选。适合填写二维码、邀请链接等可能过期的入口。"
+              }
+              label={locale === "en" ? "Expires at" : "失效日期"}
+              name="joinMethodExpiresAt"
+              type="date"
+            />
           </FormSection>
-
-          <button
-            className="min-h-11 w-full rounded-md bg-leaf px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral focus:outline-none focus:ring-2 focus:ring-leaf/30 sm:w-fit"
-            type="submit"
-          >
-            {locale === "en" ? "Save changes" : "保存修改"}
-          </button>
-        </form>
+        </AdminGroupEditForm>
       </main>
     </>
   );

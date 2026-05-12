@@ -186,4 +186,21 @@ describe("validateReportInput", () => {
       expect(result.errors).toContain("Report type is invalid.");
     }
   });
+
+  it("accepts reports tied to a specific join method", () => {
+    expect(
+      validateReportInput({
+        groupSlug: "ai-builders-wechat",
+        joinMethodId: "123e4567-e89b-12d3-a456-426614174000",
+        reportType: "invalid_join_method",
+        message: "The QR code is expired."
+      })
+    ).toEqual({
+      ok: true,
+      groupSlug: "ai-builders-wechat",
+      joinMethodId: "123e4567-e89b-12d3-a456-426614174000",
+      message: "The QR code is expired.",
+      reportType: "invalid_join_method"
+    });
+  });
 });
