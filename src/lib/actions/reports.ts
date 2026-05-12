@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import type { Database } from "../supabase/types";
 
@@ -25,6 +26,7 @@ type ReportValidationResult =
   | { ok: false; errors: string[] };
 
 const REPORT_MESSAGE_MAX_LENGTH = 2000;
+const REPORT_RATE_LIMIT_SECONDS = 120;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -43,6 +45,20 @@ function isValidSlug(value: string): boolean {
 
 function isUuid(value: string): boolean {
   return UUID_PATTERN.test(value);
+}
+
+async function getClientIp(): Promise<string | null> {
+  const requestHeaders = await headers();
+  const xForwardedFor = requestHeaders.get("x-forwarded-for");
+  if (xForwardedFor) {
+    return xForwardedFor.split(",")[0]?.trim() ?? null;
+  }
+
+  return (
+    requestHeaders.get("x-real-ip") ??
+    requestHeaders.get("cf-connecting-ip") ??
+    null
+  );
 }
 
 export function validateReportInput(
@@ -139,13 +155,49 @@ export async function reportGroup(formData: FormData) {
     }
   }
 
-  // This anonymous endpoint still needs durable rate limiting. Until Task 7
-  // adds DB-backed reads, duplicate abuse is constrained by slug lookup,
-  // strict type/length validation, and a honeypot field.
+  const reporterIp = await getClientIp();
+  const rateLimitCutoff = new Date(
+    Date.now() - REPORT_RATE_LIMIT_SECONDS * 1000
+  ).toISOString();
+
+  const recentReportsQuery = user?.id
+    ? supabase
+        .from("reports")
+        .select("id")
+        .eq("reporter_id", user.id)
+    : reporterIp
+      ? supabase.from("reports").select("id").eq("reporter_ip", reporterIp)
+      : null;
+
+  if (recentReportsQuery) {
+    const { data: recentReports, error: recentReportError } = await (validation.joinMethodId
+      ? recentReportsQuery
+          .eq("group_id", group.id)
+          .eq("join_method_id", validation.joinMethodId)
+          .eq("report_type", validation.reportType)
+          .gte("created_at", rateLimitCutoff)
+          .limit(1)
+      : recentReportsQuery
+          .eq("group_id", group.id)
+          .is("join_method_id", null)
+          .eq("report_type", validation.reportType)
+          .gte("created_at", rateLimitCutoff)
+          .limit(1));
+
+    if (recentReportError) {
+      redirect(`${returnPath}?lang=${locale}&report=error`);
+    }
+
+    if (recentReports && recentReports.length > 0) {
+      redirect(`${returnPath}?lang=${locale}&report=rate_limited`);
+    }
+  }
+
   const report: ReportInsert = {
     group_id: group.id,
     join_method_id: validation.joinMethodId,
     reporter_id: user?.id ?? null,
+    reporter_ip: reporterIp,
     report_type: validation.reportType,
     details: validation.message || null,
     status: "pending"

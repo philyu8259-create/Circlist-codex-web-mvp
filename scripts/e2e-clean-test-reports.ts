@@ -52,7 +52,7 @@ async function main() {
     .select("id,details,created_at")
     .gte("created_at", dayStart.toISOString())
     .lt("created_at", dayEnd.toISOString())
-    .like("details", "Playwright%e")
+    .like("details", "Playwright自动上报-%")
     .order("created_at", { ascending: false });
 
   if (error) {

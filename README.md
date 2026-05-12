@@ -127,3 +127,9 @@ npm run e2e:clean-test-reports
 ```
 
 `e2e:clean-test-reports` 会清除**当天（本地时区）** `details` 以 `Playwright自动上报-` 开头的测试反馈，避免每次验证后污染队列列表。
+
+开发环境一键回归（含清理）：
+
+```bash
+npm run e2e:verify-expired:smoke -- 67238615@qq.com
+```

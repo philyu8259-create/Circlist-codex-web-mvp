@@ -337,7 +337,7 @@ async function getAdminQueues(
           { count: "exact" }
         )
           .eq("moderation_status", "pending")
-          .order("created_at", { ascending: true })
+          .order("created_at", { ascending: false })
           .limit(10),
         supabase
           .from("ownership_claims")
@@ -346,7 +346,7 @@ async function getAdminQueues(
             { count: "exact" }
           )
           .eq("claim_status", "pending")
-          .order("created_at", { ascending: true })
+          .order("created_at", { ascending: false })
           .limit(10),
         supabase
           .from("reports")
@@ -355,7 +355,7 @@ async function getAdminQueues(
             { count: "exact" }
           )
           .eq("status", "pending")
-          .order("created_at", { ascending: true })
+          .order("created_at", { ascending: false })
           .limit(10),
         supabase
           .from("groups")

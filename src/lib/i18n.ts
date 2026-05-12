@@ -65,6 +65,9 @@ type Dictionary = {
     reportMessage: string;
     reportButton: string;
     reportSent: string;
+    reportValidationError: string;
+    reportError: string;
+    reportRateLimited: string;
     claimSent: string;
     notFoundTitle: string;
     notFoundDescription: string;
@@ -365,6 +368,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       reportMessage: "补充说明",
       reportButton: "提交反馈",
       reportSent: "反馈已提交，等待审核。",
+      reportValidationError: "反馈内容不完整，请确认信息后重试。",
+      reportError: "反馈提交失败，请稍后重试。",
+      reportRateLimited: "反馈提交过于频繁，请稍后再试。",
       claimSent: "认领申请已提交，等待审核。",
       notFoundTitle: "没有找到这个群组",
       notFoundDescription: "它可能尚未通过审核，或链接已经失效。"
@@ -688,6 +694,9 @@ const dictionaries: Record<Locale, Dictionary> = {
       reportMessage: "Message",
       reportButton: "Submit report",
       reportSent: "Report submitted for review.",
+      reportValidationError: "The report form is incomplete. Please check your input and retry.",
+      reportError: "Failed to send the report. Please try again later.",
+      reportRateLimited: "Please avoid submitting the same report repeatedly. Try again in a moment.",
       claimSent: "Claim submitted for review.",
       notFoundTitle: "Group not found",
       notFoundDescription:

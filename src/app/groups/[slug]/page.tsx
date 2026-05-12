@@ -346,6 +346,21 @@ export default async function GroupDetailPage({
                 {copy.detail.reportSent}
               </p>
             ) : null}
+            {reportState === "validation" ? (
+              <p className="mt-3 rounded-md border border-coral/25 bg-coral/10 px-3 py-2 text-sm font-medium text-coral">
+                {copy.detail.reportValidationError}
+              </p>
+            ) : null}
+            {reportState === "error" ? (
+              <p className="mt-3 rounded-md border border-coral/25 bg-coral/10 px-3 py-2 text-sm font-medium text-coral">
+                {copy.detail.reportError}
+              </p>
+            ) : null}
+            {reportState === "rate_limited" ? (
+              <p className="mt-3 rounded-md border border-coral/25 bg-coral/10 px-3 py-2 text-sm font-medium text-coral">
+                {copy.detail.reportRateLimited}
+              </p>
+            ) : null}
             <label className="mt-4 grid gap-2 text-sm font-medium text-ink">
               {copy.detail.reportType}
               <select

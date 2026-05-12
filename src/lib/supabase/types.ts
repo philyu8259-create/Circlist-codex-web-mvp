@@ -167,12 +167,14 @@ export type Database = {
           details: string | null;
           status: ModerationStatus;
           created_at: string;
+          reporter_ip: string | null;
         },
         {
           report_type: ReportType;
           group_id?: string | null;
           join_method_id?: string | null;
           reporter_id?: string | null;
+          reporter_ip?: string | null;
           details?: string | null;
           status?: "pending";
         }
