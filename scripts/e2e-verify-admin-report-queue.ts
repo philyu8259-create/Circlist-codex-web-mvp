@@ -188,6 +188,10 @@ async function main() {
       throw new Error("Grouped related report count was not visible.");
     }
 
+    if (!bodyText.includes("2 条同源失效反馈")) {
+      throw new Error("Dashboard priority item did not surface the grouped reports.");
+    }
+
     if (!bodyText.includes("保存后会批量关闭关联反馈")) {
       throw new Error("Grouped join freshness notice was not visible.");
     }

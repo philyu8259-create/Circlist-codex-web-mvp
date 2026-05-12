@@ -45,6 +45,10 @@ import {
   compactDetailItems,
   parseSubmissionPayload
 } from "@/lib/submission-payload";
+import {
+  buildAdminPriorityItems,
+  type AdminPriorityItem
+} from "@/lib/admin-priority";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -114,11 +118,26 @@ type AdminGroupRow = {
   categories: { slug: string | null } | { slug: string | null }[] | null;
 };
 
+type ExpiringJoinMethodRow = {
+  expires_at: string | null;
+  group_id: string;
+  groups: { name: string | null; slug: string | null } | null;
+  id: string;
+  label: string;
+};
+
+type NeedsUpdateGroupRow = {
+  id: string;
+  name: string;
+  updated_at: string | null;
+};
+
 type AdminQueues = {
   submissions: QueueItem[];
   claims: QueueItem[];
   reports: QueueItem[];
   auditEvents: QueueItem[];
+  priorityItems: AdminPriorityItem[];
   recentGroups: QueueItem[];
   recentGroupPagination: PaginationState<QueueItem>;
   recentGroupCount: number;
@@ -249,6 +268,7 @@ async function getAdminQueues(
     submissions: [],
     claims: [],
     reports: [],
+    priorityItems: [],
     recentGroups: [],
     auditEvents: [],
     recentGroupPagination: {
@@ -295,6 +315,11 @@ async function getAdminQueues(
 
     const groupStart = (groupFilters.page - 1) * ADMIN_GROUPS_PER_PAGE;
     const groupEnd = groupStart + ADMIN_GROUPS_PER_PAGE - 1;
+    const now = new Date();
+    const expiresSoon = new Date(now);
+
+    expiresSoon.setDate(expiresSoon.getDate() + 14);
+
     let managedGroupsQuery = supabase
       .from("groups")
       .select(
@@ -357,6 +382,8 @@ async function getAdminQueues(
       pendingReportsCountResult,
       groupsResult,
       recentGroupsResult,
+      expiringJoinMethodsResult,
+      needsUpdateGroupsResult,
       auditEventsResult
     ] =
       await Promise.all([
@@ -398,6 +425,22 @@ async function getAdminQueues(
           .eq("moderation_status", "approved"),
         managedGroupsQuery,
         supabase
+          .from("group_join_methods")
+          .select("id, group_id, label, expires_at, groups(name, slug)")
+          .eq("visibility", "public")
+          .eq("review_status", "approved")
+          .not("expires_at", "is", null)
+          .gte("expires_at", now.toISOString())
+          .lte("expires_at", expiresSoon.toISOString())
+          .order("expires_at", { ascending: true })
+          .limit(5),
+        supabase
+          .from("groups")
+          .select("id, name, updated_at")
+          .eq("moderation_status", "needs_update")
+          .order("updated_at", { ascending: true, nullsFirst: false })
+          .limit(5),
+        supabase
           .from("audit_events")
           .select("id, action, entity_type, entity_id, metadata, created_at")
           .order("created_at", { ascending: false })
@@ -411,6 +454,8 @@ async function getAdminQueues(
       pendingReportsCountResult.error ||
       groupsResult.error ||
       recentGroupsResult.error ||
+      expiringJoinMethodsResult.error ||
+      needsUpdateGroupsResult.error ||
       auditEventsResult.error;
 
     if (queryError) {
@@ -425,6 +470,10 @@ async function getAdminQueues(
     );
     const recentGroupRows =
       (recentGroupsResult.data as AdminGroupRow[] | null) ?? [];
+    const expiringJoinMethodRows =
+      (expiringJoinMethodsResult.data as ExpiringJoinMethodRow[] | null) ?? [];
+    const needsUpdateGroupRows =
+      (needsUpdateGroupsResult.data as NeedsUpdateGroupRow[] | null) ?? [];
     const auditRows =
       (auditEventsResult.data as AdminAuditEventRow[] | null) ?? [];
     const recentGroups = recentGroupRows.map((item) => ({
@@ -457,6 +506,34 @@ async function getAdminQueues(
       pendingClaimCount: claimsResult.count ?? claimRows.length,
       pendingReportCount: pendingReportsCountResult.count ?? 0,
       publishedGroupCount: groupsResult.count ?? 0,
+      priorityItems: buildAdminPriorityItems({
+        expiringJoinMethods: expiringJoinMethodRows.flatMap((method) =>
+          method.expires_at
+            ? [
+                {
+                  expiresAt: method.expires_at,
+                  groupId: method.group_id,
+                  groupName: method.groups?.name ?? method.groups?.slug ?? method.group_id,
+                  id: method.id,
+                  label: method.label
+                }
+              ]
+            : []
+        ),
+        groupedReports: reportRows.map((item) => ({
+          groupedCount: item.groupedCount,
+          groupId: item.groupId,
+          id: item.primary.id,
+          title: copyReportType(item.primary.report_type, locale)
+        })),
+        locale,
+        needsUpdateGroups: needsUpdateGroupRows.map((group) => ({
+          id: group.id,
+          name: group.name,
+          updatedAt: group.updated_at
+        })),
+        now
+      }).slice(0, 5),
       recentGroupCount,
       recentGroupPagination: {
         currentPage: recentGroupCurrentPage,
@@ -627,7 +704,7 @@ export default async function AdminPage({
     queues.pendingSubmissionCount +
     queues.pendingClaimCount +
     queues.pendingReportCount;
-  const priorityItems = [
+  const pendingSummaryItems = [
     {
       count: queues.pendingSubmissionCount,
       label: copy.admin.pendingSubmissions
@@ -690,12 +767,31 @@ export default async function AdminPage({
               {queues.canLoadLive ? totalPending : "-"}
             </strong>
             <p className="mt-2 text-sm leading-6 text-ink/60">
-              {priorityItems.length > 0
-                ? priorityItems
+              {pendingSummaryItems.length > 0
+                ? pendingSummaryItems
                     .map((item) => `${item.label} ${item.count}`)
                     .join(" · ")
                 : copy.admin.priorityEmpty}
             </p>
+            {queues.priorityItems.length > 0 ? (
+              <ol className="mt-4 grid gap-2">
+                {queues.priorityItems.map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      className="block rounded-md border border-ink/10 px-3 py-2 text-sm transition hover:border-leaf hover:bg-leaf/5"
+                      href={item.href}
+                    >
+                      <span className="block font-semibold text-ink">
+                        {item.title}
+                      </span>
+                      <span className="mt-1 block text-xs leading-5 text-ink/55">
+                        {item.description}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
           </aside>
         </section>
 
