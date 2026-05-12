@@ -19,6 +19,7 @@ import {
   normalizeAdminReportFilters,
   type AdminReportFilters
 } from "@/lib/admin-report-filters";
+import { groupAdminReportRows } from "@/lib/admin-report-queue";
 import {
   batchUpdateAdminGroups,
   reviewOwnershipClaim,
@@ -53,6 +54,7 @@ type QueueItem = {
   id: string;
   actionHref?: string;
   actionLabel?: string;
+  groupedCount?: number;
   title: string;
   description: string;
   status: string;
@@ -60,6 +62,7 @@ type QueueItem = {
   details?: { label: string; value: string }[];
   meta?: string;
   notice?: string;
+  showReviewForm?: boolean;
 };
 
 type SubmissionQueueRow = {
@@ -204,12 +207,20 @@ function buildClaimDetails(
 function buildReportDetails(
   item: ReportQueueRow,
   copy: ReturnType<typeof getDictionary>["admin"],
-  locale: Locale
+  locale: Locale,
+  groupedCount = 1
 ) {
   return compactDetailItems([
     {
       label: copy.groupLabel,
       value: item.groups?.name ?? item.groups?.slug ?? item.group_id
+    },
+    {
+      label: copy.reportRelatedLabel,
+      value:
+        groupedCount > 1
+          ? copy.reportRelatedCount(groupedCount)
+          : undefined
     },
     { label: copy.reporterLabel, value: item.reporter_id?.slice(0, 8) },
     { label: copy.reportTypeLabel, value: copyReportType(item.report_type, locale) },
@@ -409,7 +420,9 @@ async function getAdminQueues(
     const submissionRows =
       (submissionsResult.data as SubmissionQueueRow[] | null) ?? [];
     const claimRows = (claimsResult.data as ClaimQueueRow[] | null) ?? [];
-    const reportRows = (reportsResult.data as ReportQueueRow[] | null) ?? [];
+    const reportRows = groupAdminReportRows(
+      (reportsResult.data as ReportQueueRow[] | null) ?? []
+    );
     const recentGroupRows =
       (recentGroupsResult.data as AdminGroupRow[] | null) ?? [];
     const auditRows =
@@ -482,10 +495,13 @@ async function getAdminQueues(
         status: item.claim_status,
         meta: formatDate(item.created_at, locale)
       })),
-      reports: reportRows.map((item) => {
+      reports: reportRows.map((grouped) => {
+        const item = grouped.primary;
         const isJoinFreshnessReport = isJoinFreshnessReportFilterType(
           item.report_type
         );
+        const isBatchable = isJoinFreshnessReport && grouped.groupedCount > 1;
+        const reportTypeLabel = copyReportType(item.report_type, locale);
 
         return {
           id: item.id,
@@ -493,16 +509,32 @@ async function getAdminQueues(
             item.group_id && isJoinFreshnessReport
               ? `/admin/groups/${item.group_id}/edit?lang=${locale}`
               : undefined,
-          actionLabel: isJoinFreshnessReport
-            ? getDictionary(locale).admin.reportEditGroup
-            : undefined,
-          title: copyReportType(item.report_type, locale),
+          actionLabel: isBatchable
+            ? getDictionary(locale).admin.reportEditAndBatchClose
+            : isJoinFreshnessReport
+              ? getDictionary(locale).admin.reportEditGroup
+              : undefined,
+          groupedCount: grouped.groupedCount,
+          title: isBatchable
+            ? getDictionary(locale).admin.reportGroupedTitle(
+                reportTypeLabel,
+                grouped.groupedCount
+              )
+            : reportTypeLabel,
           description: item.details ?? item.report_type,
-          details: buildReportDetails(item, getDictionary(locale).admin, locale),
+          details: buildReportDetails(
+            item,
+            getDictionary(locale).admin,
+            locale,
+            grouped.groupedCount
+          ),
           notice: isJoinFreshnessReport
-            ? getDictionary(locale).admin.reportFreshnessNotice
+            ? isBatchable
+              ? getDictionary(locale).admin.reportGroupedFreshnessNotice
+              : getDictionary(locale).admin.reportFreshnessNotice
             : undefined,
           rawStatus: item.status,
+          showReviewForm: !isBatchable,
           status: copyReportStatus(item.status, locale),
           meta: formatDate(item.created_at, locale)
         };
@@ -1048,7 +1080,7 @@ export default async function AdminPage({
                       status={`${copy.admin.statusLabel}: ${item.status}`}
                       title={item.title}
                     >
-                      {item.rawStatus === "pending" ? (
+                      {item.rawStatus === "pending" && item.showReviewForm !== false ? (
                         <AdminReviewForm
                           action={reviewReport}
                           decisions={[

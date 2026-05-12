@@ -72,11 +72,11 @@ async function generateLoginLink({
 
 async function seedReportQueueItem({
   groupSlug,
-  reportMessage,
+  reportMessages,
   supabase
 }: {
   groupSlug: string;
-  reportMessage: string;
+  reportMessages: string[];
   supabase: ReturnType<typeof createClient<Database>>;
 }) {
   const { data: groupData, error: groupError } = await supabase
@@ -106,22 +106,25 @@ async function seedReportQueueItem({
 
   const { data: reportData, error: reportError } = await supabase
     .from("reports")
-    .insert({
+    .insert(reportMessages.map((details) => ({
       group_id: group.id,
       join_method_id: joinMethod.id,
       report_type: "invalid_join_method",
-      details: reportMessage,
+      details,
       status: "pending"
-    } as never)
-    .select("id")
-    .single();
-  const report = reportData as { id: string } | null;
+    })) as never)
+    .select("id");
+  const reports = reportData as { id: string }[] | null;
 
-  if (reportError || !report) {
+  if (reportError || !reports || reports.length !== reportMessages.length) {
     throw reportError ?? new Error("Failed to seed report queue item.");
   }
 
-  return { groupId: group.id, joinMethodId: joinMethod.id, reportId: report.id };
+  return {
+    groupId: group.id,
+    joinMethodId: joinMethod.id,
+    reportIds: reports.map((report) => report.id)
+  };
 }
 
 async function main() {
@@ -132,7 +135,11 @@ async function main() {
   const baseUrl =
     process.argv[3] ?? process.env.NEXT_PUBLIC_SITE_URL?.trim() ?? "http://127.0.0.1:3000";
   const groupSlug = process.argv[4] ?? "langchain-community-slack";
-  const reportMessage = `Playwright报告队列-${Date.now()}`;
+  const reportStamp = Date.now();
+  const reportMessages = [
+    `Playwright报告队列-${reportStamp}`,
+    `Playwright报告队列-${reportStamp + 1}`
+  ];
   const supabase = createClient<Database>(
     requireEnv("NEXT_PUBLIC_SUPABASE_URL"),
     requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
@@ -143,9 +150,9 @@ async function main() {
       }
     }
   );
-  const { groupId, joinMethodId, reportId } = await seedReportQueueItem({
+  const { groupId, joinMethodId, reportIds } = await seedReportQueueItem({
     groupSlug,
-    reportMessage,
+    reportMessages,
     supabase
   });
   const loginLink = await generateLoginLink({
@@ -166,19 +173,23 @@ async function main() {
     );
 
     const bodyText = await page.locator("body").innerText();
-    const editLink = page.getByRole("link", { name: "去编辑加入方式" }).first();
+    const editLink = page.getByRole("link", { name: "编辑并批量处理" }).first();
     const editHref = await editLink.getAttribute("href");
 
     if (!bodyText.includes("反馈状态") || !bodyText.includes("反馈类型")) {
       throw new Error("Report queue filters did not render.");
     }
 
-    if (!bodyText.includes(reportMessage)) {
+    if (!bodyText.includes(reportMessages[0]) && !bodyText.includes(reportMessages[1])) {
       throw new Error("Seeded report was not visible in the filtered queue.");
     }
 
-    if (!bodyText.includes("保存后系统会重新检查失效提醒")) {
-      throw new Error("Join freshness notice was not visible.");
+    if (!bodyText.includes("2 条待处理")) {
+      throw new Error("Grouped related report count was not visible.");
+    }
+
+    if (!bodyText.includes("保存后会批量关闭关联反馈")) {
+      throw new Error("Grouped join freshness notice was not visible.");
     }
 
     if (editHref !== `/admin/groups/${groupId}/edit?lang=zh`) {
@@ -200,7 +211,7 @@ async function main() {
           editLinkOpened: true,
           groupId,
           joinMethodId,
-          reportId,
+          reportIds,
           reportVisible: true
         },
         null,

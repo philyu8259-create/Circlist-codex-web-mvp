@@ -141,7 +141,7 @@ npm run e2e:verify-recovery -- 67238615@qq.com
 npm run e2e:clean-test-reports
 ```
 
-开发环境验证“后台报告队列筛选和编辑入口”：
+开发环境验证“后台报告队列筛选、关联反馈合并和编辑入口”：
 
 ```bash
 npm run e2e:verify-admin-report-queue -- 67238615@qq.com

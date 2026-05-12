@@ -161,7 +161,12 @@ type Dictionary = {
     reportTypeFilter: string;
     reportTypeAll: string;
     reportEditGroup: string;
+    reportEditAndBatchClose: string;
     reportFreshnessNotice: string;
+    reportGroupedFreshnessNotice: string;
+    reportGroupedTitle: (type: string, count: number) => string;
+    reportRelatedLabel: string;
+    reportRelatedCount: (count: number) => string;
     reportHandled: string;
     reportFreshnessChecked: string;
     batchActionTitle: string;
@@ -476,8 +481,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       reportTypeFilter: "反馈类型",
       reportTypeAll: "全部类型",
       reportEditGroup: "去编辑加入方式",
+      reportEditAndBatchClose: "编辑并批量处理",
       reportFreshnessNotice:
         "这类反馈通常需要先修正加入方式；保存后系统会重新检查失效提醒。",
+      reportGroupedFreshnessNotice:
+        "已合并同一加入方式的失效反馈；进入编辑页保存后会批量关闭关联反馈。",
+      reportGroupedTitle: (type, count) => `${type}（${count} 条）`,
+      reportRelatedLabel: "关联反馈",
+      reportRelatedCount: (count) => `${count} 条待处理`,
       reportHandled: "反馈状态已更新。",
       reportFreshnessChecked: "反馈已处理，加入方式失效提醒已重新检查。",
       batchActionTitle: "批量操作",
@@ -823,8 +834,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       reportTypeFilter: "Report type",
       reportTypeAll: "All types",
       reportEditGroup: "Edit join method",
+      reportEditAndBatchClose: "Edit and batch-handle",
       reportFreshnessNotice:
         "This report usually needs a join-method fix first. Saving the group rechecks stale warnings.",
+      reportGroupedFreshnessNotice:
+        "Matching stale-join reports are grouped. Saving the edit page batch-handles the related reports.",
+      reportGroupedTitle: (type, count) => `${type} (${count})`,
+      reportRelatedLabel: "Related reports",
+      reportRelatedCount: (count) => `${count} pending`,
       reportHandled: "Report status updated.",
       reportFreshnessChecked:
         "Report handled. Join-method freshness warnings were rechecked.",
