@@ -109,3 +109,21 @@ npm run test
 npm run lint
 npm run build
 ```
+
+开发环境一键验证（加入方式失效链路）：
+
+```bash
+# 先确认本地 dev 已启动：npm run dev（监听 127.0.0.1:3000）
+npm run e2e:verify-expired:auto -- 67238615@qq.com
+# 或者显式覆盖运行参数：
+npm run e2e:verify-expired:auto -- 67238615@qq.com http://127.0.0.1:3000 langchain-community-slack f4542a80-0bf7-43ef-9225-30d31a689cb7
+```
+
+本地回归建议：
+
+```bash
+npm run e2e:verify-expired:auto -- 67238615@qq.com
+npm run e2e:clean-test-reports
+```
+
+`e2e:clean-test-reports` 会清除**当天（本地时区）** `details` 以 `Playwright自动上报-` 开头的测试反馈，避免每次验证后污染队列列表。
