@@ -49,6 +49,11 @@ import {
   buildAdminPriorityItems,
   type AdminPriorityItem
 } from "@/lib/admin-priority";
+import {
+  buildAdminHealthMetrics,
+  type AdminHealthMetric,
+  type AdminHealthTone
+} from "@/lib/admin-health";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -137,6 +142,7 @@ type AdminQueues = {
   claims: QueueItem[];
   reports: QueueItem[];
   auditEvents: QueueItem[];
+  healthMetrics: AdminHealthMetric[];
   priorityItems: AdminPriorityItem[];
   recentGroups: QueueItem[];
   recentGroupPagination: PaginationState<QueueItem>;
@@ -268,6 +274,7 @@ async function getAdminQueues(
     submissions: [],
     claims: [],
     reports: [],
+    healthMetrics: [],
     priorityItems: [],
     recentGroups: [],
     auditEvents: [],
@@ -317,8 +324,10 @@ async function getAdminQueues(
     const groupEnd = groupStart + ADMIN_GROUPS_PER_PAGE - 1;
     const now = new Date();
     const expiresSoon = new Date(now);
+    const weekAgo = new Date(now);
 
     expiresSoon.setDate(expiresSoon.getDate() + 14);
+    weekAgo.setDate(weekAgo.getDate() - 7);
 
     let managedGroupsQuery = supabase
       .from("groups")
@@ -383,7 +392,11 @@ async function getAdminQueues(
       groupsResult,
       recentGroupsResult,
       expiringJoinMethodsResult,
+      expiringJoinMethodsCountResult,
       needsUpdateGroupsResult,
+      needsUpdateGroupsCountResult,
+      staleJoinReportsCountResult,
+      handledThisWeekResult,
       auditEventsResult
     ] =
       await Promise.all([
@@ -435,11 +448,39 @@ async function getAdminQueues(
           .order("expires_at", { ascending: true })
           .limit(5),
         supabase
+          .from("group_join_methods")
+          .select("id", { count: "exact", head: true })
+          .eq("visibility", "public")
+          .eq("review_status", "approved")
+          .not("expires_at", "is", null)
+          .gte("expires_at", now.toISOString())
+          .lte("expires_at", expiresSoon.toISOString()),
+        supabase
           .from("groups")
           .select("id, name, updated_at")
           .eq("moderation_status", "needs_update")
           .order("updated_at", { ascending: true, nullsFirst: false })
           .limit(5),
+        supabase
+          .from("groups")
+          .select("id", { count: "exact", head: true })
+          .eq("moderation_status", "needs_update"),
+        supabase
+          .from("reports")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending")
+          .in("report_type", ["invalid_join_method", "outdated_info"]),
+        supabase
+          .from("audit_events")
+          .select("id", { count: "exact", head: true })
+          .gte("created_at", weekAgo.toISOString())
+          .in("action", [
+            "batch_update_groups",
+            "review_claim",
+            "review_report",
+            "review_submission",
+            "update_group"
+          ]),
         supabase
           .from("audit_events")
           .select("id, action, entity_type, entity_id, metadata, created_at")
@@ -455,7 +496,11 @@ async function getAdminQueues(
       groupsResult.error ||
       recentGroupsResult.error ||
       expiringJoinMethodsResult.error ||
+      expiringJoinMethodsCountResult.error ||
       needsUpdateGroupsResult.error ||
+      needsUpdateGroupsCountResult.error ||
+      staleJoinReportsCountResult.error ||
+      handledThisWeekResult.error ||
       auditEventsResult.error;
 
     if (queryError) {
@@ -506,6 +551,13 @@ async function getAdminQueues(
       pendingClaimCount: claimsResult.count ?? claimRows.length,
       pendingReportCount: pendingReportsCountResult.count ?? 0,
       publishedGroupCount: groupsResult.count ?? 0,
+      healthMetrics: buildAdminHealthMetrics({
+        expiringJoinMethods: expiringJoinMethodsCountResult.count ?? 0,
+        handledThisWeek: handledThisWeekResult.count ?? 0,
+        locale,
+        needsUpdateGroups: needsUpdateGroupsCountResult.count ?? 0,
+        staleJoinReports: staleJoinReportsCountResult.count ?? 0
+      }),
       priorityItems: buildAdminPriorityItems({
         expiringJoinMethods: expiringJoinMethodRows.flatMap((method) =>
           method.expires_at
@@ -684,6 +736,18 @@ function StatusNotice({
   );
 }
 
+function healthMetricClassName(tone: AdminHealthTone): string {
+  if (tone === "urgent") {
+    return "border-coral/25 bg-coral/10 text-coral";
+  }
+
+  if (tone === "warning") {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+
+  return "border-leaf/20 bg-leaf/10 text-leaf";
+}
+
 export default async function AdminPage({
   searchParams
 }: {
@@ -831,6 +895,25 @@ export default async function AdminPage({
           <StatusNotice tone={batch === "updated" ? "success" : "error"}>
             {batch === "updated" ? copy.admin.batchUpdated : copy.admin.batchFailed}
           </StatusNotice>
+        ) : null}
+
+        {queues.healthMetrics.length > 0 ? (
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {queues.healthMetrics.map((metric) => (
+              <Link
+                className={`rounded-lg border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${healthMetricClassName(metric.tone)}`}
+                href={metric.href}
+                key={metric.label}
+              >
+                <span className="block text-3xl font-semibold">
+                  {metric.value}
+                </span>
+                <span className="mt-2 block text-sm font-semibold">
+                  {metric.label}
+                </span>
+              </Link>
+            ))}
+          </section>
         ) : null}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

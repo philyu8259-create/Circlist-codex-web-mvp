@@ -180,6 +180,10 @@ async function main() {
       throw new Error("Report queue filters did not render.");
     }
 
+    if (!bodyText.includes("失效反馈") || !bodyText.includes("7 天处理")) {
+      throw new Error("Admin health overview did not render.");
+    }
+
     if (!bodyText.includes(reportMessages[0]) && !bodyText.includes(reportMessages[1])) {
       throw new Error("Seeded report was not visible in the filtered queue.");
     }
