@@ -48,7 +48,7 @@ export function buildAdminHealthMetrics({
       value: String(expiringJoinMethods)
     },
     {
-      href: `/admin?lang=${currentLang}`,
+      href: `/admin?lang=${currentLang}&adminInsight=weekly_activity`,
       label: currentLang === "en" ? "Handled in 7d" : "7 天处理",
       tone: "good",
       value: String(handledThisWeek)

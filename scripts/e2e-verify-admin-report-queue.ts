@@ -168,7 +168,7 @@ async function main() {
     await page.waitForURL("**/?lang=zh**", { timeout: 20000 });
 
     await page.goto(
-      `${baseUrl}/admin?lang=zh&reportStatus=pending&reportType=invalid_join_method`,
+      `${baseUrl}/admin?lang=zh&adminInsight=weekly_activity&reportStatus=pending&reportType=invalid_join_method`,
       { waitUntil: "domcontentloaded" }
     );
 
@@ -182,6 +182,15 @@ async function main() {
 
     if (!bodyText.includes("失效反馈") || !bodyText.includes("7 天处理")) {
       throw new Error("Admin health overview did not render.");
+    }
+
+    if (
+      !bodyText.includes("7 天处理明细") ||
+      !bodyText.includes("每日处理量") ||
+      !bodyText.includes("处理类型分布") ||
+      !bodyText.includes("反复失效群组")
+    ) {
+      throw new Error("Weekly admin insight details did not render.");
     }
 
     if (!bodyText.includes(reportMessages[0]) && !bodyText.includes(reportMessages[1])) {

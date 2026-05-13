@@ -32,7 +32,7 @@ describe("buildAdminHealthMetrics", () => {
         value: "2"
       },
       {
-        href: "/admin?lang=zh",
+        href: "/admin?lang=zh&adminInsight=weekly_activity",
         label: "7 天处理",
         tone: "good",
         value: "5"

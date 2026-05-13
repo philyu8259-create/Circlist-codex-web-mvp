@@ -54,6 +54,10 @@ import {
   type AdminHealthMetric,
   type AdminHealthTone
 } from "@/lib/admin-health";
+import {
+  buildAdminTrendInsights,
+  type AdminTrendInsights
+} from "@/lib/admin-insights";
 
 type SearchParams = Promise<
   Record<string, string | string[] | undefined> | undefined
@@ -137,6 +141,17 @@ type NeedsUpdateGroupRow = {
   updated_at: string | null;
 };
 
+type TrendAuditEventRow = {
+  action: string;
+  created_at: string | null;
+};
+
+type TrendStaleReportRow = {
+  group_id: string | null;
+  groups: { name: string | null; slug: string | null } | null;
+  report_type: string;
+};
+
 type AdminQueues = {
   submissions: QueueItem[];
   claims: QueueItem[];
@@ -144,6 +159,7 @@ type AdminQueues = {
   auditEvents: QueueItem[];
   healthMetrics: AdminHealthMetric[];
   priorityItems: AdminPriorityItem[];
+  trendInsights: AdminTrendInsights;
   recentGroups: QueueItem[];
   recentGroupPagination: PaginationState<QueueItem>;
   recentGroupCount: number;
@@ -276,6 +292,12 @@ async function getAdminQueues(
     reports: [],
     healthMetrics: [],
     priorityItems: [],
+    trendInsights: buildAdminTrendInsights({
+      auditEvents: [],
+      locale,
+      now: new Date(),
+      staleReports: []
+    }),
     recentGroups: [],
     auditEvents: [],
     recentGroupPagination: {
@@ -397,6 +419,8 @@ async function getAdminQueues(
       needsUpdateGroupsCountResult,
       staleJoinReportsCountResult,
       handledThisWeekResult,
+      weeklyAuditEventsResult,
+      staleJoinReportsTrendResult,
       auditEventsResult
     ] =
       await Promise.all([
@@ -483,6 +507,25 @@ async function getAdminQueues(
           ]),
         supabase
           .from("audit_events")
+          .select("action, created_at")
+          .gte("created_at", weekAgo.toISOString())
+          .in("action", [
+            "batch_update_groups",
+            "review_claim",
+            "review_report",
+            "review_submission",
+            "update_group"
+          ])
+          .order("created_at", { ascending: true })
+          .limit(200),
+        supabase
+          .from("reports")
+          .select("group_id, report_type, groups(name, slug)")
+          .eq("status", "pending")
+          .in("report_type", ["invalid_join_method", "outdated_info"])
+          .limit(200),
+        supabase
+          .from("audit_events")
           .select("id, action, entity_type, entity_id, metadata, created_at")
           .order("created_at", { ascending: false })
           .limit(8)
@@ -501,6 +544,8 @@ async function getAdminQueues(
       needsUpdateGroupsCountResult.error ||
       staleJoinReportsCountResult.error ||
       handledThisWeekResult.error ||
+      weeklyAuditEventsResult.error ||
+      staleJoinReportsTrendResult.error ||
       auditEventsResult.error;
 
     if (queryError) {
@@ -519,6 +564,10 @@ async function getAdminQueues(
       (expiringJoinMethodsResult.data as ExpiringJoinMethodRow[] | null) ?? [];
     const needsUpdateGroupRows =
       (needsUpdateGroupsResult.data as NeedsUpdateGroupRow[] | null) ?? [];
+    const weeklyAuditEventRows =
+      (weeklyAuditEventsResult.data as TrendAuditEventRow[] | null) ?? [];
+    const staleJoinReportTrendRows =
+      (staleJoinReportsTrendResult.data as TrendStaleReportRow[] | null) ?? [];
     const auditRows =
       (auditEventsResult.data as AdminAuditEventRow[] | null) ?? [];
     const recentGroups = recentGroupRows.map((item) => ({
@@ -586,6 +635,12 @@ async function getAdminQueues(
         })),
         now
       }).slice(0, 5),
+      trendInsights: buildAdminTrendInsights({
+        auditEvents: weeklyAuditEventRows,
+        locale,
+        now,
+        staleReports: staleJoinReportTrendRows
+      }),
       recentGroupCount,
       recentGroupPagination: {
         currentPage: recentGroupCurrentPage,
@@ -758,12 +813,18 @@ export default async function AdminPage({
   const review = firstParam(params?.review);
   const reportReview = firstParam(params?.reportReview);
   const batch = firstParam(params?.batch);
+  const adminInsight = firstParam(params?.adminInsight);
   const groupFilters = normalizeAdminGroupFilters(params);
   const hasGroupFilters = hasActiveAdminGroupFilters(groupFilters);
   const reportFilters = normalizeAdminReportFilters(params);
   const hasReportFilters = hasActiveAdminReportFilters(reportFilters);
   const copy = getDictionary(locale);
   const queues = await getAdminQueues(locale, groupFilters, reportFilters);
+  const showWeeklyInsight = adminInsight === "weekly_activity";
+  const maxDailyActivity = Math.max(
+    1,
+    ...queues.trendInsights.dailyActivity.map((item) => item.count)
+  );
   const totalPending =
     queues.pendingSubmissionCount +
     queues.pendingClaimCount +
@@ -913,6 +974,104 @@ export default async function AdminPage({
                 </span>
               </Link>
             ))}
+          </section>
+        ) : null}
+
+        {showWeeklyInsight ? (
+          <section className="rounded-lg border border-ink/10 bg-white p-5 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-ink">
+                  {locale === "en" ? "7-day handling details" : "7 天处理明细"}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-ink/60">
+                  {locale === "en"
+                    ? "Daily handling volume, action mix, and groups repeatedly generating stale-join feedback."
+                    : "查看每日处理量、处理类型分布，以及反复产生失效反馈的群组。"}
+                </p>
+              </div>
+              <Link
+                className="rounded-md border border-ink/15 px-3 py-2 text-sm font-semibold text-ink/65 transition hover:border-leaf hover:text-leaf"
+                href={`/admin?lang=${locale}`}
+              >
+                {copy.admin.groupFilterClear}
+              </Link>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              <div className="rounded-md bg-paper p-4">
+                <h3 className="text-sm font-semibold text-ink">
+                  {locale === "en" ? "Daily volume" : "每日处理量"}
+                </h3>
+                <ol className="mt-4 grid gap-3">
+                  {queues.trendInsights.dailyActivity.map((item) => (
+                    <li className="grid grid-cols-[3.5rem_1fr_2rem] items-center gap-3 text-xs" key={item.date}>
+                      <span className="font-medium text-ink/55">{item.label}</span>
+                      <span className="h-2 overflow-hidden rounded-full bg-white">
+                        <span
+                          className="block h-full rounded-full bg-leaf"
+                          style={{
+                            width: `${Math.max(6, (item.count / maxDailyActivity) * 100)}%`
+                          }}
+                        />
+                      </span>
+                      <span className="text-right font-semibold text-ink">
+                        {item.count}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="rounded-md bg-paper p-4">
+                <h3 className="text-sm font-semibold text-ink">
+                  {locale === "en" ? "Action mix" : "处理类型分布"}
+                </h3>
+                {queues.trendInsights.actionBreakdown.length > 0 ? (
+                  <dl className="mt-4 grid gap-3">
+                    {queues.trendInsights.actionBreakdown.map((item) => (
+                      <div className="flex items-center justify-between gap-3 text-sm" key={item.label}>
+                        <dt className="text-ink/65">{item.label}</dt>
+                        <dd className="font-semibold text-ink">{item.count}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <p className="mt-4 text-sm text-ink/55">
+                    {copy.admin.emptyQueue}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-md bg-paper p-4">
+                <h3 className="text-sm font-semibold text-ink">
+                  {locale === "en" ? "Repeat stale groups" : "反复失效群组"}
+                </h3>
+                {queues.trendInsights.repeatStaleGroups.length > 0 ? (
+                  <ol className="mt-4 grid gap-3">
+                    {queues.trendInsights.repeatStaleGroups.map((item) => (
+                      <li className="flex items-center justify-between gap-3 text-sm" key={item.href}>
+                        <Link
+                          className="font-medium text-ink/70 underline-offset-2 hover:text-leaf hover:underline"
+                          href={item.href}
+                        >
+                          {item.label}
+                        </Link>
+                        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-ink/60">
+                          {locale === "en"
+                            ? `${item.count} reports`
+                            : `${item.count} 条反馈`}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-4 text-sm text-ink/55">
+                    {copy.admin.emptyQueue}
+                  </p>
+                )}
+              </div>
+            </div>
           </section>
         ) : null}
 
