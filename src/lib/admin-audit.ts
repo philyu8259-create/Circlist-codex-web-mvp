@@ -14,7 +14,8 @@ type AdminAuditAction =
   | "review_claim"
   | "review_report"
   | "review_submission"
-  | "update_group";
+  | "update_group"
+  | "govern_stale_group";
 
 type AdminAuditEventInput = {
   action: AdminAuditAction;
@@ -45,6 +46,16 @@ const groupStatusActionTitles = {
     zh: "批量下架群组"
   }
 } as const;
+const governanceActionTitles = {
+  needs_update: {
+    en: "Governance: mark group needs update",
+    zh: "标记反复失效群组为需要更新"
+  },
+  suspended: {
+    en: "Governance: hide group",
+    zh: "反复失效群组已暂停展示"
+  }
+} as const;
 
 export function buildAdminAuditEvent({
   action,
@@ -73,6 +84,17 @@ function auditTitle(
   metadata: Record<string, Json | undefined>,
   locale: Locale
 ): string {
+  if (action === "govern_stale_group") {
+    const status = metadata.status;
+
+    if (
+      status === "needs_update" ||
+      status === "suspended"
+    ) {
+      return governanceActionTitles[status][locale];
+    }
+  }
+
   if (action === "batch_update_groups") {
     const status = metadata.status;
 

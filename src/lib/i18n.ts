@@ -169,6 +169,13 @@ type Dictionary = {
     reportRelatedCount: (count: number) => string;
     reportHandled: string;
     reportFreshnessChecked: string;
+    governanceFailed: string;
+    governanceUpdated: string;
+    governanceNoteLabel: string;
+    governanceNotePlaceholder: string;
+    markNeedsUpdate: string;
+    quickGovernance: string;
+    suspendGroup: string;
     batchActionTitle: string;
     batchActionDescription: string;
     batchSetPublished: string;
@@ -491,6 +498,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       reportRelatedCount: (count) => `${count} 条待处理`,
       reportHandled: "反馈状态已更新。",
       reportFreshnessChecked: "反馈已处理，加入方式失效提醒已重新检查。",
+      governanceFailed: "专项治理操作失败，请稍后重试。",
+      governanceUpdated: "专项治理已提交。",
+      governanceNoteLabel: "治理备注",
+      governanceNotePlaceholder:
+        "记录本次处理原因、沟通结果或后续要求（选填）。",
+      markNeedsUpdate: "标记需要更新",
+      quickGovernance: "专项治理",
+      suspendGroup: "暂停展示",
       batchActionTitle: "批量操作",
       batchActionDescription: "勾选本页群组后，可批量恢复公开、标记需要更新或下架。",
       batchSetPublished: "设为公开",
@@ -845,6 +860,14 @@ const dictionaries: Record<Locale, Dictionary> = {
       reportHandled: "Report status updated.",
       reportFreshnessChecked:
         "Report handled. Join-method freshness warnings were rechecked.",
+      governanceFailed: "Governance operation failed. Please try again.",
+      governanceUpdated: "Governance has been recorded.",
+      governanceNoteLabel: "Governance note",
+      governanceNotePlaceholder:
+        "Record reason, follow-up, or verification notes (optional).",
+      markNeedsUpdate: "Mark needs update",
+      quickGovernance: "Quick governance",
+      suspendGroup: "Suspend group",
       batchActionTitle: "Batch actions",
       batchActionDescription:
         "Select groups on this page, then publish, mark needs update, or hide them.",

@@ -5,6 +5,7 @@ import {
   inferJoinPolicy,
   isJoinFreshnessReportType,
   restoreJoinFreshnessSignals,
+  validateAdminGroupGovernanceInput,
   validateAdminGroupBatchUpdateInput,
   validateAdminGroupUpdateInput,
   validateReviewOwnershipClaimInput,
@@ -248,6 +249,40 @@ describe("validateAdminGroupBatchUpdateInput", () => {
           "Select at least one group.",
           "Group selection is invalid.",
           "Batch status is invalid."
+        ])
+      );
+    }
+  });
+});
+
+describe("validateAdminGroupGovernanceInput", () => {
+  it("accepts a repeat-stale governance update with note", () => {
+    expect(
+      validateAdminGroupGovernanceInput({
+        groupId: submissionId,
+        governanceNote: "Need update join method after verifying link.",
+        governanceStatus: "needs_update"
+      })
+    ).toEqual({
+      ok: true,
+      groupId: submissionId,
+      governanceNote: "Need update join method after verifying link.",
+      governanceStatus: "needs_update"
+    });
+  });
+
+  it("rejects invalid governance target and status", () => {
+    const result = validateAdminGroupGovernanceInput({
+      groupId: "not-a-uuid",
+      governanceStatus: "approved"
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          "Governance target group is invalid.",
+          "Governance status is invalid."
         ])
       );
     }

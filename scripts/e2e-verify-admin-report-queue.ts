@@ -209,6 +209,15 @@ async function main() {
       throw new Error("Grouped join freshness notice was not visible.");
     }
 
+    if (
+      !bodyText.includes("专项治理") ||
+      !bodyText.includes("治理备注") ||
+      !bodyText.includes("标记需要更新") ||
+      !bodyText.includes("暂停展示")
+    ) {
+      throw new Error("Repeat stale governance controls were not visible.");
+    }
+
     if (editHref !== `/admin/groups/${groupId}/edit?lang=zh`) {
       throw new Error(`Unexpected edit link href: ${editHref ?? "<missing>"}`);
     }

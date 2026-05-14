@@ -121,6 +121,11 @@ type AdminGroupBatchUpdateInput = {
   groupIds?: FormDataEntryValue[] | null;
   status?: FormDataEntryValue | null;
 };
+type AdminGroupGovernanceInput = {
+  groupId?: FormDataEntryValue | null;
+  governanceStatus?: FormDataEntryValue | null;
+  governanceNote?: FormDataEntryValue | null;
+};
 
 type ReviewSubmissionValidation =
   | {
@@ -169,6 +174,17 @@ type AdminGroupBatchUpdateValidation =
       ok: true;
       groupIds: string[];
       status: (typeof editableModerationStatuses)[number];
+    }
+  | { ok: false; errors: string[] };
+type AdminGroupGovernanceValidation =
+  | {
+      ok: true;
+      groupId: string;
+      governanceStatus: Exclude<
+        (typeof editableModerationStatuses)[number],
+        "approved"
+      >;
+      governanceNote: string | null;
     }
   | { ok: false; errors: string[] };
 
@@ -511,6 +527,40 @@ export function validateAdminGroupBatchUpdateInput(
     ok: true,
     groupIds: Array.from(new Set(validGroupIds)),
     status: status as (typeof editableModerationStatuses)[number]
+  };
+}
+
+export function validateAdminGroupGovernanceInput(
+  input: AdminGroupGovernanceInput
+): AdminGroupGovernanceValidation {
+  const groupId = text(input.groupId);
+  const governanceStatus = text(input.governanceStatus);
+  const governanceNote = text(input.governanceNote);
+  const errors: string[] = [];
+
+  if (!groupId || !isUuid(groupId)) {
+    errors.push("Governance target group is invalid.");
+  }
+
+  if (governanceStatus !== "needs_update" && governanceStatus !== "suspended") {
+    errors.push("Governance status is invalid.");
+  }
+
+  if (governanceNote.length > REVIEWER_NOTES_MAX_LENGTH) {
+    errors.push("Governance note must be 2000 characters or fewer.");
+  }
+
+  if (errors.length > 0) {
+    return { ok: false, errors };
+  }
+
+  return {
+    ok: true,
+    groupId,
+    governanceStatus: governanceStatus as
+      | "needs_update"
+      | "suspended",
+    governanceNote: governanceNote || null
   };
 }
 
@@ -1283,4 +1333,63 @@ export async function batchUpdateAdminGroups(formData: FormData) {
     revalidatePath(`/admin/groups/${id}/edit`);
   });
   redirect(`/admin?lang=${locale}&batch=updated`);
+}
+
+export async function governRepeatStaleGroup(formData: FormData) {
+  "use server";
+
+  const locale = text(formData.get("lang")) === "en" ? "en" : "zh";
+  const validation = validateAdminGroupGovernanceInput({
+    groupId: formData.get("groupId"),
+    governanceNote: formData.get("governanceNote"),
+    governanceStatus: formData.get("governanceStatus")
+  });
+
+  if (!validation.ok) {
+    redirect(`/admin?lang=${locale}&governance=validation`);
+  }
+
+  const { supabase, user } = await requireAdmin();
+  const now = new Date().toISOString();
+  const { error: groupError } = await supabase
+    .from("groups")
+    .update({
+      moderation_status: validation.governanceStatus,
+      updated_at: now
+    } as never)
+    .eq("id", validation.groupId);
+
+  if (groupError) {
+    redirect(`/admin?lang=${locale}&governance=error`);
+  }
+
+  const { error: joinMethodError } = await supabase
+    .from("group_join_methods")
+    .update({
+      review_status: validation.governanceStatus,
+      updated_at: now
+    } as never)
+    .eq("group_id", validation.groupId)
+    .eq("visibility", "public");
+
+  if (joinMethodError) {
+    redirect(`/admin?lang=${locale}&governance=error`);
+  }
+
+  await writeAdminAuditEvent({
+    action: "govern_stale_group",
+    actorId: user.id,
+    entityId: validation.groupId,
+    entityType: "groups",
+    metadata: {
+      note: validation.governanceNote,
+      status: validation.governanceStatus
+    },
+    supabase
+  });
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath(`/admin/groups/${validation.groupId}/edit`);
+  redirect(`/admin?lang=${locale}&governance=updated`);
 }

@@ -111,6 +111,18 @@ function isPastDate(value: string | null | undefined): boolean {
   return expiresAt < today;
 }
 
+function hasJoinMethodRisk(
+  joinMethod: JoinMethodRow | null,
+  moderationStatus: EditableGroupRow["moderation_status"]
+): boolean {
+  return (
+    !joinMethod ||
+    moderationStatus === "needs_update" ||
+    joinMethod.review_status !== "approved" ||
+    isPastDate(joinMethod.expires_at)
+  );
+}
+
 function TextField({
   defaultValue,
   help,
@@ -367,9 +379,13 @@ export default async function EditAdminGroupPage({
             cancel: locale === "en" ? "Cancel" : "取消",
             confirm: locale === "en" ? "Confirm save" : "确认保存",
             confirmDescription:
-              locale === "en"
-                ? "This will immediately update the public group profile and join method. Please confirm the join path is still usable before saving."
-                : "这会立即更新公开群组资料和加入方式。保存前请确认加入入口仍然可用。",
+              hasJoinMethodRisk(joinMethod, group.moderation_status)
+                ? locale === "en"
+                  ? "The group has a join-path risk. Please recheck the public join method and confirm it is still usable before saving."
+                  : "当前群组存在加入方式风险。保存前请再次确认公开加入方式仍可用。"
+                : locale === "en"
+                  ? "This will immediately update the public group profile and join method. Please confirm the join path is still usable before saving."
+                  : "这会立即更新公开群组资料和加入方式。保存前请确认加入入口仍然可用。",
             confirmTitle:
               locale === "en" ? "Save group changes?" : "确认保存群组修改？",
             saveButton: locale === "en" ? "Save changes" : "保存修改"

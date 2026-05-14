@@ -51,13 +51,17 @@ describe("buildAdminTrendInsights", () => {
     ]);
     expect(insights.repeatStaleGroups).toEqual([
       {
+        adminHref: "/admin/groups/group-1/edit?lang=zh",
         count: 2,
         href: "/groups/langchain-slack?lang=zh",
+        groupId: "group-1",
         label: "LangChain Slack"
       },
       {
+        adminHref: "/admin/groups/group-2/edit?lang=zh",
         count: 1,
         href: "/groups/solo-builder?lang=zh",
+        groupId: "group-2",
         label: "Solo Builder"
       }
     ]);

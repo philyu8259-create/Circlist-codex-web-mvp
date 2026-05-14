@@ -22,6 +22,7 @@ import {
 import { groupAdminReportRows } from "@/lib/admin-report-queue";
 import {
   batchUpdateAdminGroups,
+  governRepeatStaleGroup,
   reviewOwnershipClaim,
   reviewReport,
   reviewSubmission
@@ -498,8 +499,9 @@ async function getAdminQueues(
           .from("audit_events")
           .select("id", { count: "exact", head: true })
           .gte("created_at", weekAgo.toISOString())
-          .in("action", [
+        .in("action", [
             "batch_update_groups",
+            "govern_stale_group",
             "review_claim",
             "review_report",
             "review_submission",
@@ -511,6 +513,7 @@ async function getAdminQueues(
           .gte("created_at", weekAgo.toISOString())
           .in("action", [
             "batch_update_groups",
+            "govern_stale_group",
             "review_claim",
             "review_report",
             "review_submission",
@@ -813,6 +816,7 @@ export default async function AdminPage({
   const review = firstParam(params?.review);
   const reportReview = firstParam(params?.reportReview);
   const batch = firstParam(params?.batch);
+  const governance = firstParam(params?.governance);
   const adminInsight = firstParam(params?.adminInsight);
   const groupFilters = normalizeAdminGroupFilters(params);
   const hasGroupFilters = hasActiveAdminGroupFilters(groupFilters);
@@ -957,6 +961,15 @@ export default async function AdminPage({
             {batch === "updated" ? copy.admin.batchUpdated : copy.admin.batchFailed}
           </StatusNotice>
         ) : null}
+        {governance ? (
+          <StatusNotice
+            tone={governance === "updated" ? "success" : "error"}
+          >
+            {governance === "updated"
+              ? copy.admin.governanceUpdated
+              : copy.admin.governanceFailed}
+          </StatusNotice>
+        ) : null}
 
         {queues.healthMetrics.length > 0 ? (
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1050,18 +1063,70 @@ export default async function AdminPage({
                 {queues.trendInsights.repeatStaleGroups.length > 0 ? (
                   <ol className="mt-4 grid gap-3">
                     {queues.trendInsights.repeatStaleGroups.map((item) => (
-                      <li className="flex items-center justify-between gap-3 text-sm" key={item.href}>
+                      <li className="grid gap-3 text-sm" key={item.groupId}>
                         <Link
                           className="font-medium text-ink/70 underline-offset-2 hover:text-leaf hover:underline"
                           href={item.href}
                         >
                           {item.label}
                         </Link>
-                        <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-ink/60">
-                          {locale === "en"
-                            ? `${item.count} reports`
-                            : `${item.count} 条反馈`}
-                        </span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="rounded-md bg-white px-2 py-1 text-xs font-semibold text-ink/60">
+                            {locale === "en"
+                              ? `${item.count} reports`
+                              : `${item.count} 条反馈`}
+                          </span>
+                          <span className="text-xs text-ink/55">
+                            {copy.admin.quickGovernance}
+                          </span>
+                        </div>
+                        <form
+                          action={governRepeatStaleGroup}
+                          className="grid gap-2 rounded-md bg-paper/60 p-2"
+                        >
+                          <input
+                            name="lang"
+                            type="hidden"
+                            value={locale}
+                          />
+                          <input
+                            name="groupId"
+                            type="hidden"
+                            value={item.groupId}
+                          />
+                          <label className="grid gap-1 text-xs font-semibold text-ink/60">
+                            {copy.admin.governanceNoteLabel}
+                            <textarea
+                              className="min-h-16 rounded-md border border-ink/15 bg-white px-3 py-2 text-xs leading-5 text-ink outline-none transition focus:border-leaf focus:ring-2 focus:ring-leaf/15"
+                              name="governanceNote"
+                              placeholder={copy.admin.governanceNotePlaceholder}
+                            />
+                          </label>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              className="min-h-9 rounded-md bg-leaf px-3 py-2 text-xs font-semibold text-white transition hover:bg-coral"
+                              name="governanceStatus"
+                              type="submit"
+                              value="needs_update"
+                            >
+                              {copy.admin.markNeedsUpdate}
+                            </button>
+                            <button
+                              className="min-h-9 rounded-md border border-ink/15 px-3 py-2 text-xs font-semibold text-ink transition hover:border-coral hover:text-coral"
+                              name="governanceStatus"
+                              type="submit"
+                              value="suspended"
+                            >
+                              {copy.admin.suspendGroup}
+                            </button>
+                          </div>
+                          <Link
+                            className="text-center text-xs font-semibold text-ink/60 underline-offset-2 hover:text-leaf hover:underline"
+                            href={item.adminHref}
+                          >
+                            {locale === "en" ? "Open edit page" : "打开编辑页"}
+                          </Link>
+                        </form>
                       </li>
                     ))}
                   </ol>

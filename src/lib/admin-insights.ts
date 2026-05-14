@@ -14,7 +14,13 @@ export type AdminTrendStaleReport = {
 export type AdminTrendInsights = {
   actionBreakdown: { count: number; label: string }[];
   dailyActivity: { count: number; date: string; label: string }[];
-  repeatStaleGroups: { count: number; href: string; label: string }[];
+  repeatStaleGroups: {
+    adminHref: string;
+    groupId: string;
+    count: number;
+    href: string;
+    label: string;
+  }[];
 };
 
 export type AdminTrendInsightsInput = {
@@ -37,6 +43,7 @@ function dayLabel(date: Date): string {
 function actionLabel(action: string, locale: AdminTrendLocale): string {
   const labels: Record<string, Record<AdminTrendLocale, string>> = {
     batch_update_groups: { en: "Batch operations", zh: "批量操作" },
+    govern_stale_group: { en: "Stale group governance", zh: "反复失效治理" },
     review_claim: { en: "Ownership claims", zh: "处理认领" },
     review_report: { en: "Reports handled", zh: "处理反馈" },
     review_submission: { en: "Submissions reviewed", zh: "审核提交" },
@@ -88,7 +95,7 @@ export function buildAdminTrendInsights({
 
   const staleGroupCounts = new Map<
     string,
-    { count: number; href: string; label: string }
+    { adminHref: string; count: number; groupId: string; href: string; label: string }
   >();
 
   for (const report of staleReports) {
@@ -105,6 +112,8 @@ export function buildAdminTrendInsights({
     staleGroupCounts.set(report.group_id, {
       count: 1,
       href: `/groups/${slug}?lang=${currentLang}`,
+      adminHref: `/admin/groups/${report.group_id}/edit?lang=${currentLang}`,
+      groupId: report.group_id,
       label: report.groups?.name ?? report.groups?.slug ?? report.group_id
     });
   }
