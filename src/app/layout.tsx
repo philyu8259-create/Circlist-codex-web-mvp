@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
@@ -51,6 +52,7 @@ export default async function RootLayout({
       <body>
         {children}
         <AppFooter />
+        <Analytics />
       </body>
     </html>
   );
