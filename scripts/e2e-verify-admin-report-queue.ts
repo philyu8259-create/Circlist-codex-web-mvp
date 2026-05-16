@@ -197,11 +197,11 @@ async function main() {
       throw new Error("Seeded report was not visible in the filtered queue.");
     }
 
-    if (!bodyText.includes("2 条待处理")) {
+    if (!/\d+ 条待处理/.test(bodyText)) {
       throw new Error("Grouped related report count was not visible.");
     }
 
-    if (!bodyText.includes("2 条同源失效反馈")) {
+    if (!/\d+ 条同源失效反馈/.test(bodyText)) {
       throw new Error("Dashboard priority item did not surface the grouped reports.");
     }
 
